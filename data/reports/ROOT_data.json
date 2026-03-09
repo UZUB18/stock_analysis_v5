@@ -1,0 +1,15 @@
+{
+  "ticker": "ROOT",
+  "recommendation": "BUY",
+  "confidenceScore": 7.5,
+  "currentPrice": 47.98,
+  "valuationData": [
+    { "name": "Bear", "target": 30.00, "color": "var(--color-danger)" },
+    { "name": "Base", "target": 65.00, "color": "var(--color-ink-muted)" },
+    { "name": "Bull", "target": 100.00, "color": "var(--color-accent)" }
+  ],
+  "fcfConversion": 1374,
+  "accrualsRatio": -4.3,
+  "sbcRev": 5.0,
+  "isStructurallySound": true
+}

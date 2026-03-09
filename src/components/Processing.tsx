@@ -4,6 +4,7 @@ import { Terminal, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 
 interface ProcessingProps {
   query: string;
+  onComplete?: (data: any, memo: string) => void;
 }
 
 const STEPS = [
@@ -21,27 +22,56 @@ const STEPS = [
   "Generating Time-Decay Clause...",
   "Generating Pre-Mortem...",
   "Generating Monitoring Framework...",
-  "Compiling Audit-Ready Memo..."
+  "Compiling Audit-Ready Memo...",
+  "Waiting for final AI validation..."
 ];
 
-export default function Processing({ query }: ProcessingProps) {
+export default function Processing({ query, onComplete }: ProcessingProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
 
   useEffect(() => {
     let stepIndex = 0;
     const interval = setInterval(() => {
-      if (stepIndex < STEPS.length) {
+      if (stepIndex < STEPS.length - 1) {
         setLogs(prev => [...prev, STEPS[stepIndex]]);
         setCurrentStep(stepIndex);
         stepIndex++;
-      } else {
-        clearInterval(interval);
+      } else if (stepIndex === STEPS.length - 1) {
+        // Stay on the last step until actual completion
+        if (!logs.includes(STEPS[stepIndex])) {
+          setLogs(prev => [...prev, STEPS[stepIndex]]);
+          setCurrentStep(stepIndex);
+        }
       }
-    }, 500); // Total time ~7.5s
+    }, 1000); 
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!onComplete) return;
+
+    let isMounted = true;
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`http://localhost:3001/api/status/${query}`);
+        const result = await res.json();
+        
+        if (result.status === 'complete' && isMounted) {
+          clearInterval(pollInterval);
+          onComplete(result.data, result.memo);
+        }
+      } catch (err) {
+        console.error("Polling error", err);
+      }
+    }, 3000); // Poll every 3 seconds
+
+    return () => {
+      isMounted = false;
+      clearInterval(pollInterval);
+    };
+  }, [query, onComplete]);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 relative">
@@ -72,12 +102,12 @@ export default function Processing({ query }: ProcessingProps) {
                 animate={{ opacity: 1, x: 0 }}
                 className="flex items-start gap-3"
               >
-                {index === currentStep && index < STEPS.length - 1 ? (
+                {index === currentStep ? (
                   <Loader2 className="w-4 h-4 text-[var(--color-warning)] animate-spin mt-0.5 shrink-0" />
                 ) : (
                   <CheckCircle2 className="w-4 h-4 text-[var(--color-accent)] mt-0.5 shrink-0" />
                 )}
-                <span className={index === currentStep && index < STEPS.length - 1 ? "text-[var(--color-ink)]" : "text-[var(--color-ink-muted)]"}>
+                <span className={index === currentStep ? "text-[var(--color-ink)]" : "text-[var(--color-ink-muted)]"}>
                   {log}
                 </span>
               </motion.div>

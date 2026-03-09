@@ -10,25 +10,48 @@ export type AppState = 'landing' | 'processing' | 'report_single' | 'report_bask
 export default function App() {
   const [appState, setAppState] = useState<AppState>('landing');
   const [query, setQuery] = useState('');
+  const [reportData, setReportData] = useState<any>(null);
+  const [reportMemo, setReportMemo] = useState<string>('');
 
-  const handleAnalyze = (input: string) => {
+  const handleAnalyze = async (input: string) => {
     setQuery(input);
     setAppState('processing');
     
-    // Simulate processing time
-    setTimeout(() => {
-      // Simple heuristic to determine if it's a basket or single stock
-      if (input.includes(',') || input.toLowerCase().includes('compare') || input.split(' ').length > 2 && input.match(/[A-Z]{2,}/g)?.length && (input.match(/[A-Z]{2,}/g)?.length || 0) > 1) {
-        setAppState('report_basket');
-      } else {
-        setAppState('report_single');
-      }
-    }, 8000); // 8 seconds of processing
+    // Determine type
+    const isBasket = input.includes(',') || input.toLowerCase().includes('compare') || (input.split(' ').length > 2 && (input.match(/[A-Z]{2,}/g)?.length || 0) > 1);
+    const type = isBasket ? 'basket' : 'single';
+    
+    try {
+      await fetch('http://localhost:3001/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticker: input, type })
+      });
+    } catch (e) {
+      console.error("Failed to request analysis:", e);
+    }
+  };
+
+  const handleAnalysisComplete = (data: any, memo: string) => {
+    setReportData(data);
+    setReportMemo(memo);
+    const isBasket = query.includes(',') || query.toLowerCase().includes('compare') || (query.split(' ').length > 2 && (query.match(/[A-Z]{2,}/g)?.length || 0) > 1);
+    setAppState(isBasket ? 'report_basket' : 'report_single');
+  };
+
+  const handleViewHistory = (ticker: string, data: any, memo: string) => {
+    setQuery(ticker);
+    setReportData(data);
+    setReportMemo(memo);
+    const isBasket = ticker.includes(',') || ticker.toLowerCase().includes('compare') || (ticker.split(' ').length > 2 && (ticker.match(/[A-Z]{2,}/g)?.length || 0) > 1);
+    setAppState(isBasket ? 'report_basket' : 'report_single');
   };
 
   const handleReset = () => {
     setAppState('landing');
     setQuery('');
+    setReportData(null);
+    setReportMemo('');
   };
 
   return (
@@ -75,7 +98,7 @@ export default function App() {
                 transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                 className="flex-1 flex flex-col"
               >
-                <Landing onAnalyze={handleAnalyze} />
+                <Landing onAnalyze={handleAnalyze} onViewHistory={handleViewHistory} />
               </motion.div>
             )}
             
@@ -88,7 +111,7 @@ export default function App() {
                 transition={{ duration: 0.4 }}
                 className="flex-1 flex flex-col"
               >
-                <Processing query={query} />
+                <Processing query={query} onComplete={handleAnalysisComplete} />
               </motion.div>
             )}
 
@@ -101,7 +124,7 @@ export default function App() {
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                 className="flex-1 flex flex-col"
               >
-                <SingleStockReport query={query} onBack={handleReset} />
+                <SingleStockReport query={query} data={reportData} memo={reportMemo} onBack={handleReset} />
               </motion.div>
             )}
 
