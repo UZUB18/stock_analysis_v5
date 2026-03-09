@@ -1,0 +1,5 @@
+{
+  "name": "Long-Only Stock Protocol",
+  "description": "A mathematically enforced investment analyst generating audit-ready capital allocation memos.",
+  "requestFramePermissions": []
+}
