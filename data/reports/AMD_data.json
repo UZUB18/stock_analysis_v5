@@ -1,0 +1,18 @@
+{
+  "ticker": "AMD",
+  "companyName": "Advanced Micro Devices, Inc.",
+  "currentPrice": 205.78,
+  "marketCap": 335505948672,
+  "forwardPE": 18.9,
+  "revenueGrowth": 0.341,
+  "operatingMargins": 0.170,
+  "freeCashFlow": 6735000000,
+  "accrualsRatio": -0.043,
+  "fcfConversion": 1.553,
+  "returnOnEquity": 0.071,
+  "recommendation": "HOLD",
+  "confidenceScore": 6,
+  "primaryValuationMethod": "Forward P/E",
+  "secondaryValuationMethod": "Market Share Gain Probability",
+  "thesisExpiration": "2027-03-10 or if MI300/MI325 revenue run-rate misses $6B."
+}

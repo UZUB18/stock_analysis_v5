@@ -1,0 +1,18 @@
+{
+  "ticker": "NVDA",
+  "companyName": "NVIDIA Corporation",
+  "currentPrice": 185.66,
+  "marketCap": 4512466599936,
+  "forwardPE": 17.2,
+  "revenueGrowth": 0.732,
+  "operatingMargins": 0.650,
+  "freeCashFlow": 96676000000,
+  "accrualsRatio": 0.084,
+  "fcfConversion": 0.805,
+  "returnOnEquity": 1.015,
+  "recommendation": "BUY",
+  "confidenceScore": 9,
+  "primaryValuationMethod": "Forward P/E & Growth Adjusted Peg",
+  "secondaryValuationMethod": "FCF Yield Support",
+  "thesisExpiration": "2029-03-10 or if Datacenter Revenue Growth decelerates below 25% YoY."
+}

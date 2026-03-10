@@ -1,0 +1,168 @@
+{
+  "metadata": {
+    "ticker": "SNOW",
+    "company_name": "Snowflake Inc.",
+    "analysis_date": "2026-03-11",
+    "horizon_years": 5,
+    "currency": "USD",
+    "current_price": 175.32,
+    "shares_outstanding": 342200000,
+    "market_cap": 59994505216,
+    "enterprise_value": 61296644096,
+    "sector": "Technology",
+    "industry": "Software - Application",
+    "company_type": "operating-company",
+    "primary_sources": ["yfinance", "10-K", "Investor Relations"],
+    "price_source": "Nasdaq Real Time"
+  },
+  "decision_gate": {
+    "pass": true,
+    "gate_summary": "Passes on liquidity and solvency, but significant caution on structural SBC (40%+ of revenue). High quality cash generation protects the downside.",
+    "variant_perception_present": true,
+    "variant_perception_summary": "Market views SNOW as a commoditizing data warehouse facing competition from Databricks and hyperscalers. We view it as a 'Data Gravity' platform with an emerging AI ecosystem moat (Cortex/OpenAI collaboration).",
+    "structural_red_flags": ["Extreme SBC (40.8% of Revenue)"],
+    "why_continue_or_stop": "Continue. 40%+ revenue growth and highly negative accruals indicate institutional-grade fundamental quality despite GAAP losses."
+  },
+  "recommendation": {
+    "rating": "HOLD",
+    "confidence_1_to_10": 6,
+    "thesis_status": "fresh",
+    "thesis_expiration": "2029-03-11 or if FCF growth drops below 20% YoY.",
+    "required_proof_points": ["Operating margin expansion > 200bps/year", "Retention rates > 125%"]
+  },
+  "thesis": {
+    "three_line_thesis": [
+      "Data gravity ensures customers remain locked into the Snowflake ecosystem as their data volumes scale.",
+      "Transition from a query engine to an AI-native data platform provides a new growth S-curve.",
+      "Institutional-grade cash flow (OCF positive) allows for massive reinvestment or buybacks to offset dilution."
+    ],
+    "market_mispricing": "Market is over-penalizing near-term growth deceleration and ignoring the stickiness of the underlying data platform.",
+    "must_be_true": [
+      "Customers continue to prefer Snowflake's abstraction over managing their own cloud infrastructure.",
+      "SBC as % of revenue trends down to <20% over 5 years.",
+      "AI Cortex adoption drives incremental compute spend."
+    ],
+    "bear_case_steelman": "Hyperscalers (AWS/Azure) integrate their native data tools so tightly that third-party platforms like Snowflake become unnecessary overhead. Open-source formats (Iceberg) break the lock-in.",
+    "why_market_may_be_right": "Valuation (72x forward PE) leaves zero room for error in execution or macro headwinds.",
+    "three_ways_i_am_wrong": [
+      "Iceberg tables successfully commoditize the storage layer.",
+      "Databricks wins the unified AI/Data workload battle.",
+      "Compute pricing pressures compress margins permanently."
+    ]
+  },
+  "business_quality": {
+    "archetype": "compounder",
+    "moat_score_10": 7,
+    "pricing_power_score_10": 8,
+    "reinvestment_runway_score_10": 9,
+    "management_execution_score_10": 7,
+    "capital_allocation_score_10": 6,
+    "balance_sheet_score_10": 9,
+    "governance_score_10": 5,
+    "durability_score_10": 8,
+    "key_strengths": ["Extreme Data Gravity", "Seamless Multi-cloud experience", "Massive Net Cash Position"],
+    "key_weaknesses": ["Extreme Dilution Risk", "Premium Valuation", "Intense Competition"],
+    "competitive_position_notes": "Leading independent cloud data platform; faces pressure from 'good enough' native cloud tools."
+  },
+  "financial_quality": {
+    "revenue_cagr_3y_pct": 43.8,
+    "gross_margin_ttm_pct": 67.1,
+    "operating_margin_ttm_pct": -24.4,
+    "fcf_margin_ttm_pct": 18.9,
+    "roic_ttm_pct": null,
+    "roce_ttm_pct": null,
+    "fcf_to_net_income_pct": -68.8,
+    "accruals_ratio": -0.2486,
+    "sbc_as_pct_revenue": 40.8,
+    "share_count_cagr_3y_pct": 1.2,
+    "fcf_per_share_cagr_3y_pct": 35.0,
+    "net_debt_to_ebitda": -1.76,
+    "interest_coverage": null,
+    "current_ratio": 1.3,
+    "days_sales_outstanding_delta": 5.0,
+    "deferred_revenue_growth_pct": 25.0,
+    "sector_specific_metrics": {
+      "Net_Revenue_Retention": "131%",
+      "Remaining_Performance_Obligations": "$5.2B"
+    }
+  },
+  "valuation": {
+    "current_multiples": {
+      "pe_ttm": null,
+      "pe_ntm": 72.1,
+      "ev_ebitda_ttm": -55.2,
+      "ev_ebitda_ntm": 25.0,
+      "ev_sales_ttm": 13.1,
+      "ev_sales_ntm": 10.5,
+      "p_fcf_ttm": 34.0,
+      "fcf_yield_ttm_pct": 1.47,
+      "dividend_yield_pct": 0.0,
+      "peg": 5.6
+    },
+    "peer_multiples_summary": "Trading at a significant premium to general SaaS (8x sales) but in-line with hyper-growth infrastructure peers.",
+    "valuation_methods": [
+      {
+        "method": "5-Year FCF Exit Multiple",
+        "implied_value_per_share": 235.0,
+        "weight_pct": 70,
+        "key_assumptions": ["25% CAGR FCF", "35x Exit Multiple"]
+      },
+      {
+        "method": "Reverse DCF (10% WACC)",
+        "implied_value_per_share": 190.0,
+        "weight_pct": 30,
+        "key_assumptions": ["Market implies 22% FCF growth for 10 years"]
+      }
+    ],
+    "blended_implied_value_per_share": 221.5,
+    "margin_of_safety_pct": 20.8,
+    "expected_returns": {
+      "bear_case_5y_irr_pct": -9.93,
+      "base_case_5y_irr_pct": 9.49,
+      "bull_case_5y_irr_pct": 24.35,
+      "return_driver_stack_pct": {
+        "starting_yield": 1.47,
+        "fundamental_growth": 25.0,
+        "multiple_change": -15.0,
+        "capital_allocation_tailwind_or_drag": -2.0
+      }
+    }
+  },
+  "risk": {
+    "fragility_score_10": 6,
+    "macro_sensitivities": ["Interest Rates", "Enterprise IT Spending Cycles"],
+    "business_risks": ["Hyperscaler substitution", "Technological obsolescence"],
+    "financial_risks": ["Valuation multiple compression", "Prolonged GAAP unprofitability"],
+    "regulatory_risks": ["Data residency laws", "AI ethics/regulation"],
+    "technology_or_disruption_risks": ["Open-source storage formats (Iceberg)", "Vector database disruption"],
+    "what_breaks_first_under_stress": "Enterprise cloud optimization projects during a recession leading to seat/compute reduction."
+  },
+  "monitoring": {
+    "weekly_or_monthly_watch": ["Hiring patterns vs peer group", "Databricks feature releases"],
+    "quarterly_thresholds": ["NRR > 125%", "Operating loss < 20% of Rev"],
+    "event_triggers": ["Competitive M&A", "Management team overhaul"],
+    "next_review_date": "2026-06-01"
+  },
+  "analyst_process": {
+    "evidence_quality_score_10": 8,
+    "data_completeness_score_10": 9,
+    "estimate_dependence_score_10": 7,
+    "missing_items": ["Exact NRR for mid-market vs enterprise"],
+    "what_changed_vs_prior": "New institutional framework application."
+  },
+  "comparison_fields": {
+    "quality_score_10": 7.0,
+    "valuation_score_10": 5.5,
+    "expected_5y_irr_base_pct": 9.49,
+    "downside_case_5y_irr_pct": -9.93,
+    "fcf_yield_ttm_pct": 1.47,
+    "roic_ttm_pct": null,
+    "net_debt_to_ebitda": -1.76,
+    "moat_score_10": 7.0,
+    "reinvestment_runway_score_10": 9.0,
+    "balance_sheet_score_10": 9.0,
+    "fragility_score_10": 6.0,
+    "evidence_quality_score_10": 8.0,
+    "data_completeness_score_10": 9.0
+  }
+}

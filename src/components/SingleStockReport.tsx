@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import Markdown from 'react-markdown';
-import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Download, TrendingUp, TrendingDown, Minus, Info, FileText, LayoutDashboard } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Rectangle } from 'recharts';
+import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Download, TrendingUp, TrendingDown, Minus, Info, FileText, LayoutDashboard, Target, Briefcase, TrendingUp as YieldIcon } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Rectangle, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 
 const InfoTooltip = ({ text, position = 'top' }: { text: string, position?: 'top' | 'bottom' }) => (
   <div className="group relative inline-flex items-center ml-2 align-middle z-50">
@@ -75,8 +75,53 @@ export default function SingleStockReport({ query, data, memo, onBack }: SingleS
     );
   }
 
-  const { ticker, recommendation, confidenceScore, currentPrice, valuationData, fcfConversion, accrualsRatio, sbcRev, isStructurallySound } = data;
+  // Metadata
+  const ticker = data.metadata?.ticker || data.ticker || query;
+  const currentPrice = data.metadata?.current_price || data.currentPrice || 0;
+  const companyName = data.metadata?.company_name || '';
+  const sector = data.metadata?.sector || '';
+  
+  // Recommendation
+  const recommendation = data.recommendation?.rating || data.recommendation || 'HOLD';
+  const confidenceScore = data.recommendation?.confidence_1_to_10 || data.confidenceScore || 5;
+  const archetype = data.business_quality?.archetype || '';
+  
+  // Financial Quality
+  const fcfConversion = data.financial_quality?.fcf_to_net_income_pct?.toFixed(1) || data.fcfConversion || 'N/A';
+  const accrualsRatio = data.financial_quality?.accruals_ratio?.toFixed(2) || data.accrualsRatio || 'N/A';
+  const sbcRev = data.financial_quality?.sbc_as_pct_revenue?.toFixed(1) || data.sbcRev || 'N/A';
+  const revenueCagr = data.financial_quality?.revenue_cagr_3y_pct?.toFixed(1) || 'N/A';
+  const isStructurallySound = data.decision_gate?.pass ?? data.isStructurallySound ?? true;
+
+  // Business Quality Radar
+  const bq = data.business_quality || {};
+  const radarData = [
+    { subject: 'Moat', A: bq.moat_score_10 || 5, fullMark: 10 },
+    { subject: 'Pricing', A: bq.pricing_power_score_10 || 5, fullMark: 10 },
+    { subject: 'Runway', A: bq.reinvestment_runway_score_10 || 5, fullMark: 10 },
+    { subject: 'Mgmt', A: bq.management_execution_score_10 || 5, fullMark: 10 },
+    { subject: 'Capital', A: bq.capital_allocation_score_10 || 5, fullMark: 10 },
+    { subject: 'Durability', A: bq.durability_score_10 || 5, fullMark: 10 },
+  ];
+
+  // Valuation
+  const returns = data.valuation?.expected_returns || {};
+  const valuationData = data.valuationData || [
+    { name: 'Bear', target: returns.bear_case_5y_irr_pct || 0, color: 'var(--color-danger)' },
+    { name: 'Base', target: returns.base_case_5y_irr_pct || 0, color: 'var(--color-warning)' },
+    { name: 'Bull', target: returns.bull_case_5y_irr_pct || 0, color: 'var(--color-accent)' }
+  ];
+  
+  const returnDrivers = returns.return_driver_stack_pct || {};
+  const multiples = data.valuation?.current_multiples || {};
+
   const markdownContent = memo || '# No memo provided.';
+
+  // Dynamic Risk & Execution Content
+  const thesisExpiration = data.recommendation?.thesis_expiration || data.thesisExpiration || "No expiration provided.";
+  const fragilityScore = data.risk?.fragility_score_10 || "N/A";
+  const preMortem = data.risk?.what_breaks_first_under_stress || data.thesis?.bear_case_steelman || "If this investment fails, it will likely be due to structural deterioration in the core moat or macro-economic compression of the multiple.";
+  const monitoringItems = data.monitoring?.quarterly_thresholds || data.monitoring?.weekly_or_monthly_watch || [];
 
   const getRecColor = (rec: string) => {
     switch (rec?.toUpperCase()) {
@@ -100,9 +145,7 @@ export default function SingleStockReport({ query, data, memo, onBack }: SingleS
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
+      transition: { staggerChildren: 0.1 }
     }
   };
 
@@ -110,6 +153,25 @@ export default function SingleStockReport({ query, data, memo, onBack }: SingleS
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
   };
+
+  // Quality styling helpers
+  const getQualityColor = (val: string | number, type: 'high-is-good' | 'low-is-good' = 'high-is-good', thresholds: [number, number]) => {
+    if (val === 'N/A' || val === null || val === undefined) return 'text-[var(--color-ink)]';
+    const num = Number(val);
+    if (isNaN(num)) return 'text-[var(--color-ink)]';
+    
+    if (type === 'high-is-good') {
+      if (num >= thresholds[1]) return 'text-[var(--color-accent)]';
+      if (num <= thresholds[0]) return 'text-[var(--color-danger)]';
+      return 'text-[var(--color-warning)]';
+    } else {
+      if (num <= thresholds[0]) return 'text-[var(--color-accent)]';
+      if (num >= thresholds[1]) return 'text-[var(--color-danger)]';
+      return 'text-[var(--color-warning)]';
+    }
+  };
+
+  // ... (keep existing definitions)
 
   return (
     <div className="flex-1 overflow-y-auto p-6 md:p-12">
@@ -119,6 +181,8 @@ export default function SingleStockReport({ query, data, memo, onBack }: SingleS
         initial="hidden"
         animate="show"
       >
+        
+        {/* ... (keep top bar and hero) ... */}
         
         {/* Top Bar */}
         <motion.div variants={itemVariants} className="flex justify-between items-center">
@@ -167,8 +231,15 @@ export default function SingleStockReport({ query, data, memo, onBack }: SingleS
             <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--color-accent)] rounded-full mix-blend-screen filter blur-[100px] opacity-10"></div>
             
             <div className="space-y-2 z-10">
-              <h1 className="display-heading text-6xl md:text-8xl font-bold tracking-tighter">{ticker}</h1>
-              <p className="font-mono text-[var(--color-ink-muted)] uppercase tracking-widest text-sm">Capital Allocation Memo</p>
+              <div className="flex items-center gap-3">
+                <h1 className="display-heading text-6xl md:text-8xl font-bold tracking-tighter">{ticker}</h1>
+                {archetype && (
+                  <span className="px-3 py-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-full text-xs font-mono uppercase tracking-widest text-[var(--color-ink-muted)] self-start mt-2">
+                    {archetype}
+                  </span>
+                )}
+              </div>
+              <p className="font-mono text-[var(--color-ink-muted)] uppercase tracking-widest text-sm">{companyName || 'Capital Allocation Memo'} {sector ? `• ${sector}` : ''}</p>
             </div>
             
             <div className="flex items-center gap-6 mt-12 z-10">
@@ -193,7 +264,7 @@ export default function SingleStockReport({ query, data, memo, onBack }: SingleS
                 <circle cx="50" cy="50" r="45" fill="none" stroke="var(--color-surface)" strokeWidth="8" />
                 <circle 
                   cx="50" cy="50" r="45" fill="none" 
-                  stroke="var(--color-accent)" 
+                  stroke={confidenceScore >= 8 ? "var(--color-accent)" : confidenceScore >= 5 ? "var(--color-warning)" : "var(--color-danger)"} 
                   strokeWidth="8" 
                   strokeDasharray="283" 
                   strokeDashoffset={283 - (283 * confidenceScore) / 10} 
@@ -202,88 +273,159 @@ export default function SingleStockReport({ query, data, memo, onBack }: SingleS
                 />
               </svg>
               <div className="absolute flex flex-col items-center justify-center">
-                <span className="display-heading text-5xl font-bold">{confidenceScore}</span>
+                <span className={`display-heading text-5xl font-bold ${getQualityColor(confidenceScore, 'high-is-good', [4, 8])}`}>{confidenceScore}</span>
                 <span className="font-mono text-xs text-[var(--color-ink-muted)]">/ 10</span>
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* Decision Gates */}
-        <motion.div variants={itemVariants} className="space-y-4">
-          <h3 className="mono-label">Decision Gates</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="glass-panel rounded-xl p-4 flex items-center justify-between border-l-4 border-l-[var(--color-accent)] hover:-translate-y-1 hover:shadow-lg hover:shadow-[var(--color-accent-muted)] transition-all cursor-default">
-              <span className="font-mono text-sm uppercase flex items-center">
-                Liquidity Check
-                <InfoTooltip text="Ensures the asset has sufficient average daily trading volume (ADTV) to enter and exit without significant slippage." />
-              </span>
-              <CheckCircle2 className="w-5 h-5 text-[var(--color-accent)] shrink-0 ml-2" />
+        {/* Business Quality & Decision Gates */}
+        <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-4 flex flex-col h-full">
+            <h3 className="mono-label">Decision Gates</h3>
+            <div className="flex-1 glass-panel rounded-xl p-6 flex flex-col justify-center space-y-4">
+              <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-4">
+                <span className="font-mono text-sm uppercase flex items-center">
+                  Liquidity Check
+                </span>
+                <CheckCircle2 className="w-5 h-5 text-[var(--color-accent)] shrink-0 ml-2" />
+              </div>
+              <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-4">
+                <span className="font-mono text-sm uppercase flex items-center">
+                  Reflexivity Check
+                </span>
+                <CheckCircle2 className="w-5 h-5 text-[var(--color-accent)] shrink-0 ml-2" />
+              </div>
+              <div className="flex items-center justify-between pt-2">
+                <span className="font-mono text-sm uppercase flex items-center">
+                  Structural Disqualifier
+                  <InfoTooltip text="Checks for fatal flaws such as extreme customer concentration or accounting irregularities." />
+                </span>
+                {!isStructurallySound ? <AlertTriangle className="w-5 h-5 text-[var(--color-danger)] shrink-0 ml-2" /> : <CheckCircle2 className="w-5 h-5 text-[var(--color-accent)] shrink-0 ml-2" />}
+              </div>
             </div>
-            <div className="glass-panel rounded-xl p-4 flex items-center justify-between border-l-4 border-l-[var(--color-accent)] hover:-translate-y-1 hover:shadow-lg hover:shadow-[var(--color-accent-muted)] transition-all cursor-default">
-              <span className="font-mono text-sm uppercase flex items-center">
-                Reflexivity Check
-                <InfoTooltip text="Evaluates if the company's fundamentals are overly dependent on its stock price (e.g., heavy reliance on equity issuance)." />
-              </span>
-              <CheckCircle2 className="w-5 h-5 text-[var(--color-accent)] shrink-0 ml-2" />
-            </div>
-            <div className={`glass-panel rounded-xl p-4 flex items-center justify-between border-l-4 ${!isStructurallySound ? 'border-l-[var(--color-warning)] hover:shadow-[rgba(255,184,0,0.1)]' : 'border-l-[var(--color-accent)] hover:shadow-[var(--color-accent-muted)]'} hover:-translate-y-1 hover:shadow-lg transition-all cursor-default`}>
-              <span className="font-mono text-sm uppercase flex items-center">
-                Structural Disqualifier
-                <InfoTooltip text="Checks for fatal flaws such as extreme customer concentration, regulatory existential threats, or accounting irregularities." />
-              </span>
-              {!isStructurallySound ? <AlertTriangle className="w-5 h-5 text-[var(--color-warning)] shrink-0 ml-2" /> : <CheckCircle2 className="w-5 h-5 text-[var(--color-accent)] shrink-0 ml-2" />}
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="mono-label flex items-center">
+              Business Quality Matrix
+              <InfoTooltip text="Qualitative underwriting scores across 6 key structural dimensions." />
+            </h3>
+            <div className="glass-panel rounded-xl p-4 h-64 flex items-center justify-center">
+               <ResponsiveContainer width="100%" height="100%">
+                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                  <PolarGrid stroke="var(--color-border)" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--color-ink-muted)', fontSize: 10, fontFamily: 'var(--font-mono)' }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 10]} tick={false} axisLine={false} />
+                  <Radar name="Score" dataKey="A" stroke="var(--color-accent)" fill="var(--color-accent)" fillOpacity={0.3} />
+                </RadarChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </motion.div>
 
         {/* Earnings Quality Dashboard */}
         <motion.div variants={itemVariants} className="space-y-4">
-          <h3 className="mono-label">Earnings Quality Dashboard</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-[var(--color-border)] border border-[var(--color-border)] rounded-2xl">
-            <div className="bg-[var(--color-bg)] p-8 flex flex-col space-y-2 rounded-t-2xl md:rounded-tr-none md:rounded-l-2xl">
+          <h3 className="mono-label">Earnings Quality & Growth</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[var(--color-border)] border border-[var(--color-border)] rounded-2xl">
+            <div className="bg-[var(--color-bg)] p-6 flex flex-col space-y-2 rounded-tl-2xl md:rounded-l-2xl">
+              <span className="font-mono text-xs text-[var(--color-ink-muted)] uppercase tracking-wider flex items-center">
+                Revenue CAGR (3y)
+              </span>
+              <span className={`display-heading text-3xl font-bold ${getQualityColor(revenueCagr, 'high-is-good', [10, 20])}`}>{revenueCagr}%</span>
+            </div>
+            <div className="bg-[var(--color-bg)] p-6 flex flex-col space-y-2 rounded-tr-2xl md:rounded-none">
               <span className="font-mono text-xs text-[var(--color-ink-muted)] uppercase tracking-wider flex items-center">
                 FCF Conversion
-                <InfoTooltip text="Free Cash Flow divided by Net Income. Measures how well accounting earnings translate to actual cash. >100% is ideal." />
+                <InfoTooltip text="Free Cash Flow divided by Net Income. >100% is ideal." />
               </span>
-              <span className="display-heading text-4xl font-bold text-[var(--color-accent)]">{fcfConversion}%</span>
-              <span className="text-sm text-[var(--color-ink-muted)]">High quality cash generation.</span>
+              <span className={`display-heading text-3xl font-bold ${getQualityColor(fcfConversion, 'high-is-good', [50, 100])}`}>{fcfConversion}%</span>
             </div>
-            <div className="bg-[var(--color-bg)] p-8 flex flex-col space-y-2">
+            <div className="bg-[var(--color-bg)] p-6 flex flex-col space-y-2 rounded-bl-2xl md:rounded-none">
               <span className="font-mono text-xs text-[var(--color-ink-muted)] uppercase tracking-wider flex items-center">
                 Accruals Ratio
-                <InfoTooltip text="Non-cash earnings as a percentage of total assets. High positive accruals can indicate aggressive accounting. Negative is favorable." />
+                <InfoTooltip text="Non-cash earnings as a percentage of total assets. Negative is favorable." />
               </span>
-              <span className={`display-heading text-4xl font-bold ${Number(accrualsRatio) > 5 ? 'text-[var(--color-warning)]' : 'text-[var(--color-ink)]'}`}>{accrualsRatio}%</span>
-              <span className="text-sm text-[var(--color-ink-muted)]">Negative is favorable.</span>
+              <span className={`display-heading text-3xl font-bold ${getQualityColor(accrualsRatio, 'low-is-good', [0, 5])}`}>{accrualsRatio}</span>
             </div>
-            <div className="bg-[var(--color-bg)] p-8 flex flex-col space-y-2 rounded-b-2xl md:rounded-bl-none md:rounded-r-2xl">
+            <div className="bg-[var(--color-bg)] p-6 flex flex-col space-y-2 rounded-br-2xl md:rounded-r-2xl">
               <span className="font-mono text-xs text-[var(--color-ink-muted)] uppercase tracking-wider flex items-center">
                 SBC as % of Rev
-                <InfoTooltip text="Stock-Based Compensation divided by Revenue. Measures shareholder dilution. >15% is a red flag for tech companies." />
+                <InfoTooltip text="Stock-Based Compensation divided by Revenue. >15% is a red flag." />
               </span>
-              <span className={`display-heading text-4xl font-bold ${Number(sbcRev) > 15 ? 'text-[var(--color-warning)]' : 'text-[var(--color-ink)]'}`}>
+              <span className={`display-heading text-3xl font-bold ${getQualityColor(sbcRev, 'low-is-good', [5, 15])}`}>
                 {sbcRev}%
               </span>
-              <span className="text-sm text-[var(--color-ink-muted)]">Dilution impact analysis.</span>
             </div>
           </div>
         </motion.div>
 
-        {/* Valuation & Risks Grid */}
+        {/* Valuation & Multiples Grid */}
         <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           
+          <div className="space-y-6">
+            <h3 className="mono-label flex items-center">
+              Current Multiples
+              <InfoTooltip text="Pricing context. Never base a decision purely on multiples without checking growth and quality." />
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="glass-panel p-4 rounded-xl flex flex-col justify-between">
+                <span className="font-mono text-xs text-[var(--color-ink-muted)] uppercase">Forward P/E</span>
+                <span className={`text-2xl font-bold ${getQualityColor(multiples.pe_ntm, 'low-is-good', [15, 30])}`}>{multiples.pe_ntm ? `${multiples.pe_ntm}x` : 'N/A'}</span>
+              </div>
+              <div className="glass-panel p-4 rounded-xl flex flex-col justify-between">
+                <span className="font-mono text-xs text-[var(--color-ink-muted)] uppercase">EV / Sales (NTM)</span>
+                <span className={`text-2xl font-bold ${getQualityColor(multiples.ev_sales_ntm, 'low-is-good', [5, 15])}`}>{multiples.ev_sales_ntm ? `${multiples.ev_sales_ntm}x` : 'N/A'}</span>
+              </div>
+              <div className="glass-panel p-4 rounded-xl flex flex-col justify-between">
+                <span className="font-mono text-xs text-[var(--color-ink-muted)] uppercase">FCF Yield</span>
+                <span className={`text-2xl font-bold ${getQualityColor(multiples.fcf_yield_ttm_pct, 'high-is-good', [2, 5])}`}>{multiples.fcf_yield_ttm_pct ? `${multiples.fcf_yield_ttm_pct}%` : 'N/A'}</span>
+              </div>
+              <div className="glass-panel p-4 rounded-xl flex flex-col justify-between">
+                <span className="font-mono text-xs text-[var(--color-ink-muted)] uppercase">PEG Ratio</span>
+                <span className={`text-2xl font-bold ${getQualityColor(multiples.peg, 'low-is-good', [1, 2])}`}>{multiples.peg ? multiples.peg : 'N/A'}</span>
+              </div>
+            </div>
+
+            <h3 className="mono-label flex items-center pt-4">
+              Base Case Return Drivers
+              <InfoTooltip text="Decomposition of the base case 5-year annualized return." />
+            </h3>
+            <div className="glass-panel p-5 rounded-xl space-y-3">
+              <div className="flex justify-between items-center text-sm font-mono">
+                <span className="text-[var(--color-ink-muted)] flex items-center gap-2"><YieldIcon className="w-4 h-4" /> Starting Yield</span>
+                <span className={`font-bold ${getQualityColor(returnDrivers.starting_yield, 'high-is-good', [0, 4])}`}>{returnDrivers.starting_yield || 0}%</span>
+              </div>
+              <div className="flex justify-between items-center text-sm font-mono">
+                <span className="text-[var(--color-ink-muted)] flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Fundamental Growth</span>
+                <span className={`font-bold ${getQualityColor(returnDrivers.fundamental_growth, 'high-is-good', [5, 15])}`}>{returnDrivers.fundamental_growth || 0}%</span>
+              </div>
+              <div className="flex justify-between items-center text-sm font-mono">
+                <span className="text-[var(--color-ink-muted)] flex items-center gap-2"><Target className="w-4 h-4" /> Multiple Change</span>
+                <span className={`font-bold ${getQualityColor(returnDrivers.multiple_change, 'high-is-good', [-5, 0])}`}>
+                  {returnDrivers.multiple_change || 0}%
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-sm font-mono">
+                <span className="text-[var(--color-ink-muted)] flex items-center gap-2"><Briefcase className="w-4 h-4" /> Capital Allocation</span>
+                <span className={`font-bold ${getQualityColor(returnDrivers.capital_allocation_tailwind_or_drag, 'high-is-good', [-1, 2])}`}>
+                  {returnDrivers.capital_allocation_tailwind_or_drag || 0}%
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* Valuation Scenario Chart */}
           <div className="space-y-6">
             <h3 className="mono-label flex items-center">
-              Valuation Scenarios (5-Year)
-              <InfoTooltip text="Calculated using a reverse DCF and multiple-compression models over a 5-year time horizon." />
+              Expected 5-Year IRR
+              <InfoTooltip text="Base, Bull, and Bear case internal rates of return over a 5-year holding period." />
             </h3>
-            <div className="glass-panel rounded-2xl p-6 h-80 w-full">
-              {valuationData && (
-                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-                  <BarChart data={valuationData} layout="vertical" margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <XAxis type="number" stroke="var(--color-border)" tick={{ fill: 'var(--color-ink-muted)', fontFamily: 'var(--font-mono)' }} />
+            <div className="glass-panel rounded-2xl p-6 h-80 w-full flex flex-col justify-center">
+                <ResponsiveContainer width="100%" height="90%" minWidth={1} minHeight={1}>
+                  <BarChart data={valuationData} layout="vertical" margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+                    <XAxis type="number" stroke="var(--color-border)" tick={{ fill: 'var(--color-ink-muted)', fontFamily: 'var(--font-mono)' }} unit="%" />
                     <YAxis dataKey="name" type="category" stroke="var(--color-border)" tick={{ fill: 'var(--color-ink)', fontFamily: 'var(--font-mono)' }} />
                     <Tooltip 
                       cursor={{ fill: 'var(--color-surface)' }}
@@ -292,55 +434,62 @@ export default function SingleStockReport({ query, data, memo, onBack }: SingleS
                           return (
                             <div className="bg-[var(--color-surface-hover)] border border-[var(--color-border)] p-3 rounded-lg shadow-xl font-mono z-50">
                               <p className="text-[var(--color-ink-muted)] text-xs uppercase mb-1">{label} Scenario</p>
-                              <p className="text-[var(--color-ink)] text-lg font-bold">${Number(payload[0].value).toFixed(2)}</p>
+                              <p className="text-[var(--color-ink)] text-lg font-bold">{Number(payload[0].value).toFixed(2)}% IRR</p>
                             </div>
                           );
                         }
                         return null;
                       }}
                     />
-                    <Bar dataKey="target" radius={[0, 4, 4, 0]} barSize={32} isAnimationActive={false} shape={<CustomBar />} activeBar={<Rectangle stroke="var(--color-ink)" strokeWidth={2} fillOpacity={0.8} />}>
+                    <Bar dataKey="target" radius={[0, 4, 4, 0]} barSize={28} isAnimationActive={false} shape={<CustomBar />} activeBar={<Rectangle stroke="var(--color-ink)" strokeWidth={2} fillOpacity={0.8} />}>
                       {valuationData.map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={entry.color} className="hover:brightness-125 transition-all cursor-pointer" />
                       ))}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
-              )}
-            </div>
-          </div>
-
-          {/* Risk & Execution Cards */}
-          <div className="space-y-6">
-            <h3 className="mono-label flex items-center">
-              Risk & Execution Framework
-              <InfoTooltip text="Pre-defined exit conditions and monitoring metrics to prevent emotional decision-making during the hold period." />
-            </h3>
-            <div className="space-y-4">
-              <div className="glass-panel rounded-xl p-6 border-l-2 border-l-[var(--color-warning)] hover:-translate-y-1 hover:shadow-lg hover:shadow-[rgba(255,184,0,0.05)] transition-all cursor-default">
-                <h4 className="font-mono font-bold uppercase tracking-wider mb-2 text-sm">Time-Decay Clause</h4>
-                <p className="text-[var(--color-ink-muted)] text-sm leading-relaxed">
-                  If revenue growth decelerates below 15% for two consecutive quarters, the thesis is invalidated. Exit position regardless of price action.
-                </p>
-              </div>
-              <div className="glass-panel rounded-xl p-6 border-l-2 border-l-[var(--color-danger)] hover:-translate-y-1 hover:shadow-lg hover:shadow-[var(--color-danger-muted)] transition-all cursor-default">
-                <h4 className="font-mono font-bold uppercase tracking-wider mb-2 text-sm">Pre-Mortem</h4>
-                <p className="text-[var(--color-ink-muted)] text-sm leading-relaxed">
-                  If this investment fails, it will likely be due to hyperscaler insourcing of core capabilities, rendering the standalone product a commodity.
-                </p>
-              </div>
-              <div className="glass-panel rounded-xl p-6 border-l-2 border-l-[var(--color-accent)] hover:-translate-y-1 hover:shadow-lg hover:shadow-[var(--color-accent-muted)] transition-all cursor-default">
-                <h4 className="font-mono font-bold uppercase tracking-wider mb-2 text-sm">Monitoring Framework</h4>
-                <ul className="text-[var(--color-ink-muted)] text-sm leading-relaxed list-disc list-inside space-y-1">
-                  <li>Quarterly NRR (Must remain &gt; 115%)</li>
-                  <li>Operating Margin Expansion (Target: +200bps YoY)</li>
-                  <li>Customer Acquisition Cost (CAC) Payback Period</li>
-                </ul>
-              </div>
             </div>
           </div>
 
         </motion.div>
+
+        {/* Risk & Execution Cards */}
+        <motion.div variants={itemVariants} className="space-y-4">
+          <h3 className="mono-label flex items-center">
+            Risk & Execution Framework
+            <InfoTooltip text="Pre-defined exit conditions and monitoring metrics to prevent emotional decision-making during the hold period." />
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="glass-panel rounded-xl p-6 border-l-2 border-l-[var(--color-warning)] hover:-translate-y-1 hover:shadow-lg transition-all cursor-default">
+              <h4 className="font-mono font-bold uppercase tracking-wider mb-2 text-sm">Time-Decay Clause</h4>
+              <p className="text-[var(--color-ink-muted)] text-sm leading-relaxed">
+                {thesisExpiration}
+              </p>
+            </div>
+            <div className="glass-panel rounded-xl p-6 border-l-2 border-l-[var(--color-danger)] hover:-translate-y-1 hover:shadow-lg transition-all cursor-default relative">
+              <div className="absolute top-4 right-4 bg-[var(--color-danger-muted)] text-[var(--color-danger)] px-2 py-0.5 rounded text-xs font-mono font-bold">
+                Fragility: {fragilityScore}/10
+              </div>
+              <h4 className="font-mono font-bold uppercase tracking-wider mb-2 text-sm pr-16">Pre-Mortem</h4>
+              <p className="text-[var(--color-ink-muted)] text-sm leading-relaxed">
+                {preMortem}
+              </p>
+            </div>
+            <div className="glass-panel rounded-xl p-6 border-l-2 border-l-[var(--color-accent)] hover:-translate-y-1 hover:shadow-lg transition-all cursor-default">
+              <h4 className="font-mono font-bold uppercase tracking-wider mb-2 text-sm">Monitoring Framework</h4>
+              {monitoringItems.length > 0 ? (
+                <ul className="text-[var(--color-ink-muted)] text-sm leading-relaxed list-disc list-inside space-y-1">
+                  {monitoringItems.map((item: string, i: number) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[var(--color-ink-muted)] text-sm leading-relaxed">No specific thresholds tracked.</p>
+              )}
+            </div>
+          </div>
+        </motion.div>
+        
         </>
         )}
 
