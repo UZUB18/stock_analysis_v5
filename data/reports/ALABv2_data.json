@@ -1,0 +1,160 @@
+{
+  "metadata": {
+    "ticker": "ALAB",
+    "company_name": "Astera Labs, Inc.",
+    "analysis_date": "2026-03-11",
+    "horizon_years": 5,
+    "currency": "USD",
+    "current_price": 120.50,
+    "shares_outstanding": 170214503,
+    "market_cap": 20510847611,
+    "enterprise_value": 20345354875,
+    "sector": "Technology",
+    "industry": "Semiconductors",
+    "company_type": "operating-company",
+    "primary_sources": ["yfinance", "investor-relations"],
+    "price_source": "yfinance"
+  },
+  "decision_gate": {
+    "pass": true,
+    "gate_summary": "Pass. High-growth connectivity leader in AI infrastructure with clean balance sheet and extreme cash conversion.",
+    "variant_perception_present": true,
+    "variant_perception_summary": "Consensus sees a cyclical semi play; we see a structural toll-booth on AI cluster scale.",
+    "structural_red_flags": [],
+    "why_continue_or_stop": "Continue. Unit economics and growth justify deep dive."
+  },
+  "recommendation": {
+    "rating": "BUY",
+    "confidence_1_to_10": 8,
+    "thesis_status": "fresh",
+    "thesis_expiration": "2029-03-10 or if PCIe Gen 6 adoption stalls.",
+    "required_proof_points": ["Revenue growth > 40%", "Gross margins > 70%"]
+  },
+  "thesis": {
+    "three_line_thesis": [
+      "AI infrastructure requires massive scale-out which creates physical distance/signal bottlenecks.",
+      "ALAB owns the 'intelligent connectivity' layer (Retimers/CXL) solving these bottlenecks.",
+      "High margins and negative accruals indicate extreme competitive position and pricing power."
+    ],
+    "market_mispricing": "Market underestimates the multiplier effect of cluster size on retimer attach rates.",
+    "must_be_true": ["AI clusters continue to scale horizontally", "ALAB maintains technical lead over competitors"],
+    "bear_case_steelman": "Hyperscalers develop internal retimer solutions or alternative topologies that bypass PCIe/CXL needs.",
+    "why_market_may_be_right": "Valuation (33x forward) is high and assumes zero friction in AI CapEx cycles.",
+    "three_ways_i_am_wrong": ["Standard shift away from CXL", "Competitor commoditization of DSP retimers", "Geopolitical semi-shocks"]
+  },
+  "business_quality": {
+    "archetype": "compounder",
+    "moat_score_10": 8,
+    "pricing_power_score_10": 9,
+    "reinvestment_runway_score_10": 9,
+    "management_execution_score_10": 8,
+    "capital_allocation_score_10": 7,
+    "balance_sheet_score_10": 9,
+    "governance_score_10": 7,
+    "durability_score_10": 8,
+    "key_strengths": ["Deep hyperscaler integration", "First-mover advantage in CXL", "COSMOS software ecosystem"],
+    "key_weaknesses": ["Customer concentration", "Short public history", "High reliance on AI CapEx"],
+    "competitive_position_notes": "Structural toll-booth on high-speed data movement."
+  },
+  "financial_quality": {
+    "revenue_cagr_3y_pct": 115.0,
+    "gross_margin_ttm_pct": 75.7,
+    "operating_margin_ttm_pct": 24.7,
+    "fcf_margin_ttm_pct": 33.1,
+    "roic_ttm_pct": 18.5,
+    "roce_ttm_pct": 17.2,
+    "fcf_to_net_income_pct": 128.6,
+    "accruals_ratio": -0.065,
+    "sbc_as_pct_revenue": 14.2,
+    "share_count_cagr_3y_pct": 5.0,
+    "fcf_per_share_cagr_3y_pct": 105.0,
+    "net_debt_to_ebitda": -0.5,
+    "interest_coverage": 45.0,
+    "current_ratio": 4.5,
+    "days_sales_outstanding_delta": -2.0,
+    "deferred_revenue_growth_pct": 15.0,
+    "sector_specific_metrics": {
+      "Attach_rate_per_GPU": "Rising",
+      "Wafer_supply_security": "High"
+    }
+  },
+  "valuation": {
+    "current_multiples": {
+      "pe_ttm": 95.5,
+      "pe_ntm": 33.1,
+      "ev_ebitda_ttm": 65.0,
+      "ev_ebitda_ntm": 22.0,
+      "ev_sales_ttm": 23.1,
+      "ev_sales_ntm": 12.0,
+      "p_fcf_ttm": 70.4,
+      "fcf_yield_ttm_pct": 1.4,
+      "dividend_yield_pct": 0.0,
+      "peg": 0.36
+    },
+    "peer_multiples_summary": "Trading at a premium to legacy semi but discount to AI-growth peers relative to 90% growth.",
+    "valuation_methods": [
+      {
+        "method": "Normalized Earnings Power",
+        "implied_value_per_share": 145.0,
+        "weight_pct": 50,
+        "key_assumptions": ["25% Operating Margin", "20x Terminal P/E"]
+      },
+      {
+        "method": "Owner-Earnings DCF",
+        "implied_value_per_share": 138.0,
+        "weight_pct": 50,
+        "key_assumptions": ["35% FCF growth for 5y", "3% terminal growth"]
+      }
+    ],
+    "blended_implied_value_per_share": 141.5,
+    "margin_of_safety_pct": 17.7,
+    "expected_returns": {
+      "bear_case_5y_irr_pct": 2.0,
+      "base_case_5y_irr_pct": 22.0,
+      "bull_case_5y_irr_pct": 45.0,
+      "return_driver_stack_pct": {
+        "starting_yield": 1.4,
+        "fundamental_growth": 25.0,
+        "multiple_change": -5.0,
+        "capital_allocation_tailwind_or_drag": 0.6
+      }
+    }
+  },
+  "risk": {
+    "fragility_score_10": 4,
+    "macro_sensitivities": ["Rates", "Semi-cycle", "AI CapEx"],
+    "business_risks": ["Technological obsolescence", "Concentration"],
+    "financial_risks": ["Valuation compression"],
+    "regulatory_risks": ["China export controls"],
+    "technology_or_disruption_risks": ["Optical interconnect adoption"],
+    "what_breaks_first_under_stress": "Hyperscaler CapEx air-pocket."
+  },
+  "monitoring": {
+    "weekly_or_monthly_watch": ["Nvidia Blackwell ramp", "TSMC monthly rev"],
+    "quarterly_thresholds": [">70% Gross Margin", ">40% Rev growth"],
+    "event_triggers": ["Competitive CXL controller release", "Management exit"],
+    "next_review_date": "2026-05-15"
+  },
+  "analyst_process": {
+    "evidence_quality_score_10": 8,
+    "data_completeness_score_10": 9,
+    "estimate_dependence_score_10": 6,
+    "missing_items": [],
+    "what_changed_vs_prior": "Fresh coverage."
+  },
+  "comparison_fields": {
+    "quality_score_10": 8.5,
+    "valuation_score_10": 7.0,
+    "expected_5y_irr_base_pct": 22.0,
+    "downside_case_5y_irr_pct": 2.0,
+    "fcf_yield_ttm_pct": 1.4,
+    "roic_ttm_pct": 18.5,
+    "net_debt_to_ebitda": -0.5,
+    "moat_score_10": 8.0,
+    "reinvestment_runway_score_10": 9.0,
+    "balance_sheet_score_10": 9.0,
+    "fragility_score_10": 4.0,
+    "evidence_quality_score_10": 8.0,
+    "data_completeness_score_10": 9.0
+  }
+}

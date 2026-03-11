@@ -14,21 +14,29 @@ export default function App() {
   const [reportMemo, setReportMemo] = useState<string>('');
 
   const handleAnalyze = async (input: string) => {
-    setQuery(input);
-    setAppState('processing');
-    
     // Determine type
     const isBasket = input.includes(',') || input.toLowerCase().includes('compare') || (input.split(' ').length > 2 && (input.match(/[A-Z]{2,}/g)?.length || 0) > 1);
     const type = isBasket ? 'basket' : 'single';
     
     try {
-      await fetch('http://localhost:3001/api/analyze', {
+      // Fetch the assigned ticker from the backend first
+      const response = await fetch('http://localhost:3001/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ticker: input, type })
       });
+      const resData = await response.json();
+      
+      const activeTicker = resData.ticker || input;
+      
+      // Now update the state so Processing mounts with the correct assigned ticker
+      setQuery(activeTicker);
+      setAppState('processing');
     } catch (e) {
       console.error("Failed to request analysis:", e);
+      // Fallback
+      setQuery(input);
+      setAppState('processing');
     }
   };
 
@@ -137,7 +145,7 @@ export default function App() {
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                 className="flex-1 flex flex-col"
               >
-                <BasketReport query={query} onBack={handleReset} />
+                <BasketReport query={query} data={reportData} memo={reportMemo} onBack={handleReset} />
               </motion.div>
             )}
           </AnimatePresence>

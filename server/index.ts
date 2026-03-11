@@ -30,10 +30,25 @@ app.post('/api/analyze', async (req, res) => {
       return res.status(400).json({ error: 'Ticker is required' });
     }
 
-    const requestFile = path.join(REQUESTS_DIR, `${ticker}.json`);
-    await fs.writeFile(requestFile, JSON.stringify({ ticker, type, timestamp: new Date().toISOString() }, null, 2));
+    let finalTicker = ticker;
+    let version = 1;
+    let fileExists = true;
 
-    res.json({ success: true, message: 'Analysis requested', ticker });
+    while (fileExists) {
+      const checkTicker = version === 1 ? ticker : `${ticker}v${version}`;
+      try {
+        await fs.access(path.join(REPORTS_DIR, `${checkTicker}_data.json`));
+        version++;
+      } catch (e) {
+        finalTicker = checkTicker;
+        fileExists = false;
+      }
+    }
+
+    const requestFile = path.join(REQUESTS_DIR, `${finalTicker}.json`);
+    await fs.writeFile(requestFile, JSON.stringify({ ticker: finalTicker, type, timestamp: new Date().toISOString() }, null, 2));
+
+    res.json({ success: true, message: 'Analysis requested', ticker: finalTicker });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });

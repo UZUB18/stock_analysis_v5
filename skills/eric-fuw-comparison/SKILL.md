@@ -1,6 +1,6 @@
 ---
 name: eric-fuw-comparison
-description: compare multiple pre-existing stock-analyst reports for long-horizon capital allocation. use when several [ticker]_data.json and [ticker]_memo.md files already exist and a portfolio-manager style ranking is needed for a 3 to 5+ year decision. do not fetch new financials. ingest every report, penalize weak or incomplete analyst work, compare quality, valuation, durability, fragility, macro overlap, and expected return, then write a decisive basket memo in data/reports/.
+description: compare multiple pre-existing stock-analyst reports for long-horizon capital allocation. use when several [ticker]_data.json and [ticker]_memo.md files already exist and a portfolio-manager style ranking is needed for a 3 to 5+ year decision. do not fetch new financials. ingest every report, penalize weak or incomplete analyst work, compare quality, valuation, durability, fragility, macro overlap, and expected return, then write a decisive basket memo and a structured dashboard json file in data/reports/.
 ---
 
 # Eric Fuw Comparison
@@ -10,18 +10,19 @@ Read existing analyst outputs, compare them, and decide where fresh long-term ca
 
 Load these files before finalizing any basket decision:
 - `references/basket-comparison-framework.md`
+- `references/basket-json-schema.md`
 - `references/stock-json-schema.md`
 
 Use `scripts/build_basket_snapshot.py <folder>` to create a first-pass comparison table before writing the final memo.
 
 ## Workflow
-1. Locate the report folder. Prefer `data/reports/` when it exists; otherwise use the current directory.
-2. Read every relevant `[TICKER]_data.json` and `[TICKER]_memo.md` file.
+1. Locate the report folder. Look in `data/requests/` to identify the trigger query (e.g., `Compare CRWD, PANW.json`). Prefer `data/reports/` when it exists.
+2. Read every relevant `[TICKER]_data.json` and `[TICKER]_memo.md` file for the basket candidates.
 3. Run the basket snapshot script to build a normalized table and a provisional ranking.
 4. Read the memos for nuance the JSON cannot fully capture: moat mechanism, management quality, cyclicality, and obvious thesis gaps.
 5. Penalize weak source quality, missing data, inconsistent logic, or obvious optimism.
 6. Decide whether the right answer is one winner, a split allocation, staged deployment, or holding cash.
-7. Write `BASKET_comparison_[YYYY-MM-DD].md` in the report folder.
+7. Write `[REQUEST_NAME]_memo.md` AND `[REQUEST_NAME]_data.json` in the `data/reports/` folder. **The `[REQUEST_NAME]` must exactly match the filename of the request.** For example, if the request file is `Compare CRWD, PANW.json`, your output files MUST be `Compare CRWD, PANW_memo.md` and `Compare CRWD, PANW_data.json`. The dashboard requires both the memo and the structured JSON to function.
 
 ## Hard Rules
 - Do not fetch new filings, prices, or commentary. Work only from the supplied reports.

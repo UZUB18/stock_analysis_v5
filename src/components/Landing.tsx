@@ -10,6 +10,7 @@ interface LandingProps {
 export default function Landing({ onAnalyze, onViewHistory }: LandingProps) {
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<any[]>([]);
+  const [showAllHistory, setShowAllHistory] = useState(false);
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -129,13 +130,23 @@ export default function Landing({ onAnalyze, onViewHistory }: LandingProps) {
             transition={{ delay: 0.25 }}
             className="w-full flex flex-col items-start text-left relative z-10 flex-1 min-h-0 justify-center"
           >
-            <div className="flex items-center gap-2 mb-3 md:mb-4 text-[var(--color-ink-muted)]">
-              <Clock className="w-4 h-4 md:w-5 md:h-5" />
-              <h3 className="font-mono uppercase tracking-widest text-xs md:text-sm">Recent Memorandums</h3>
+            <div className="flex items-center justify-between w-full mb-3 md:mb-4">
+              <div className="flex items-center gap-2 text-[var(--color-ink-muted)]">
+                <Clock className="w-4 h-4 md:w-5 md:h-5" />
+                <h3 className="font-mono uppercase tracking-widest text-xs md:text-sm">Recent Memorandums</h3>
+              </div>
+              {history.length > 3 && (
+                <button
+                  onClick={() => setShowAllHistory(!showAllHistory)}
+                  className="text-[10px] md:text-xs font-mono uppercase tracking-wider text-[var(--color-ink-muted)] hover:text-[var(--color-accent)] transition-colors border border-[var(--color-border)] rounded px-2 py-1 bg-[var(--color-surface)]"
+                >
+                  {showAllHistory ? 'Show Less' : 'View All History'}
+                </button>
+              )}
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 w-full">
-              {history.slice(0, 3).map((item, i) => {
+            <div className={`grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 w-full ${showAllHistory ? 'overflow-y-auto max-h-64 pr-2 custom-scrollbar' : ''}`}>
+              {(showAllHistory ? history : history.slice(0, 3)).map((item, i) => {
                 // Handle both the old flat schema and the new nested institutional schema
                 const rec = item.data?.recommendation?.rating || item.data?.recommendation || 'N/A';
                 const score = item.data?.recommendation?.confidence_1_to_10 || item.data?.confidenceScore || 'N/A';

@@ -1,0 +1,18 @@
+{
+  "ticker": "PLTR",
+  "companyName": "Palantir Technologies Inc.",
+  "currentPrice": 24.50,
+  "marketCap": 55000000000,
+  "forwardPE": 65.4,
+  "revenueGrowth": 0.205,
+  "operatingMargins": 0.120,
+  "freeCashFlow": 750000000,
+  "accrualsRatio": -0.015,
+  "fcfConversion": 1.2,
+  "returnOnEquity": 0.15,
+  "recommendation": "HOLD",
+  "confidenceScore": 7,
+  "primaryValuationMethod": "EV/Sales & FCF Multiples",
+  "secondaryValuationMethod": "Growth Adjusted PEG",
+  "thesisExpiration": "2029-03-11 or if US Commercial growth drops below 30% YoY."
+}

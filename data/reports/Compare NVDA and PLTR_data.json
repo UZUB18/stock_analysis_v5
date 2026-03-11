@@ -1,0 +1,49 @@
+{
+  "tickers": ["NVDA", "PLTR"],
+  "allocations": [
+    {
+      "ticker": "NVDA",
+      "percentage": 85,
+      "rationale": "Category absolute monopoly; generating immense, real cash flow at a surprisingly low forward multiple."
+    },
+    {
+      "ticker": "PLTR",
+      "percentage": 15,
+      "rationale": "High-quality enterprise software play; acts as a structural hedge but valuation caps heavy allocation."
+    }
+  ],
+  "gauntlet_scores": {
+    "business_quality": {
+      "NVDA": 95,
+      "PLTR": 85
+    },
+    "earnings_quality": {
+      "NVDA": 90,
+      "PLTR": 65
+    },
+    "valuation_support": {
+      "NVDA": 80,
+      "PLTR": 25
+    },
+    "strategic_durability": {
+      "NVDA": 90,
+      "PLTR": 90
+    },
+    "execution_dependency": {
+      "NVDA": 35,
+      "PLTR": 85
+    }
+  },
+  "garp_metrics": [
+    {
+      "ticker": "NVDA",
+      "revenue_growth_pct": 73.2,
+      "ev_sales_multiple": 25.0
+    },
+    {
+      "ticker": "PLTR",
+      "revenue_growth_pct": 20.5,
+      "ev_sales_multiple": 22.0
+    }
+  ]
+}
