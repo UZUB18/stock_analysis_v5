@@ -103,19 +103,27 @@ export default function AgentInvestor() {
                 <path d="M 35 145 L 40 145 L 30 115 L 25 115 Z" fill="var(--color-bg)" stroke="var(--color-accent)" />
                 
                 {/* Left Arm reaching out to laptop */}
-                <motion.path 
-                  d="M 80 100 C 65 100, 50 120, 55 140"
-                  stroke="var(--color-accent)" strokeWidth="2" fill="none"
-                  animate={{ d: ["M 80 100 C 65 100, 50 120, 55 140", "M 80 100 C 60 90, 50 110, 65 140", "M 80 100 C 65 100, 50 120, 55 140"] }}
+                <motion.g
+                  animate={{ rotate: [0, -6, 0] }}
                   transition={{ duration: 0.3, repeat: Infinity, ease: "linear" }}
-                />
+                  style={{ originX: "80px", originY: "100px" }}
+                >
+                  <path
+                    d="M 80 100 C 65 100, 50 120, 55 140"
+                    stroke="var(--color-accent)" strokeWidth="2" fill="none"
+                  />
+                </motion.g>
                 {/* Right Arm reaching across body to laptop */}
-                <motion.path 
-                  d="M 120 100 C 105 110, 80 120, 70 140"
-                  stroke="var(--color-accent)" strokeWidth="2" fill="none"
-                  animate={{ d: ["M 120 100 C 105 110, 80 120, 70 140", "M 120 100 C 95 100, 70 110, 75 140", "M 120 100 C 105 110, 80 120, 70 140"] }}
+                <motion.g
+                  animate={{ rotate: [0, 5, 0] }}
                   transition={{ duration: 0.4, repeat: Infinity, ease: "linear" }}
-                />
+                  style={{ originX: "120px", originY: "100px" }}
+                >
+                  <path
+                    d="M 120 100 C 105 110, 80 120, 70 140"
+                    stroke="var(--color-accent)" strokeWidth="2" fill="none"
+                  />
+                </motion.g>
               </motion.g>
             )}
 
@@ -125,22 +133,13 @@ export default function AgentInvestor() {
                 <path d="M 80 100 C 60 110, 60 150, 70 160" />
                 
                 {/* Animated Right arm smoking (2 intakes per cycle) */}
-                <motion.path 
-                  d="M 120 100 C 140 110, 150 120, 140 110" 
-                  animate={{ 
-                    d: [
-                      "M 120 100 C 150 110, 160 140, 140 150", // 0: Arm down
-                      "M 120 100 C 160 80, 140 60, 120 70",   // 1: Hand to mouth (Intake 1)
-                      "M 120 100 C 160 80, 140 60, 120 70",   // 2: Hold
-                      "M 120 100 C 160 100, 150 110, 130 110", // 3: Arm slightly down (Exhale 1)
-                      "M 120 100 C 160 100, 150 110, 130 110", // 4: Hold
-                      "M 120 100 C 160 80, 140 60, 120 70",   // 5: Hand to mouth (Intake 2)
-                      "M 120 100 C 160 80, 140 60, 120 70",   // 6: Hold
-                      "M 120 100 C 150 110, 160 140, 140 150", // 7: Arm down (Exhale 2)
-                    ] 
-                  }}
+                <motion.g
+                  animate={{ rotate: [0, -35, -35, -15, -15, -35, -35, 0] }}
                   transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", times: [0, 0.15, 0.25, 0.4, 0.5, 0.65, 0.75, 1] }}
-                />
+                  style={{ originX: "120px", originY: "100px" }}
+                >
+                  <path d="M 120 100 C 140 110, 150 120, 140 150" />
+                </motion.g>
 
                 {/* The Cigarette attached to the hand */}
                 <motion.g

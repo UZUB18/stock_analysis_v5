@@ -5,10 +5,12 @@ import { Terminal, ArrowRight, ShieldCheck, Activity, Cpu, Clock, ChevronRight }
 interface LandingProps {
   onAnalyze: (query: string) => void;
   onViewHistory?: (ticker: string, data: any, memo: string) => void;
+  initialQuery?: string;
+  error?: string;
 }
 
-export default function Landing({ onAnalyze, onViewHistory }: LandingProps) {
-  const [input, setInput] = useState('');
+export default function Landing({ onAnalyze, onViewHistory, initialQuery = '', error = '' }: LandingProps) {
+  const [input, setInput] = useState(initialQuery);
   const [history, setHistory] = useState<any[]>([]);
   const [showAllHistory, setShowAllHistory] = useState(false);
 
@@ -35,6 +37,10 @@ export default function Landing({ onAnalyze, onViewHistory }: LandingProps) {
       .catch(err => console.error("Failed to load history", err));
   }, []);
 
+  useEffect(() => {
+    setInput(initialQuery);
+  }, [initialQuery]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
@@ -45,12 +51,16 @@ export default function Landing({ onAnalyze, onViewHistory }: LandingProps) {
   const getRecColor = (rec: any) => {
     if (!rec || typeof rec !== 'string') return 'text-[var(--color-ink-muted)] border-[var(--color-border)]';
     switch (rec.toUpperCase()) {
+      case 'BASKET': return 'text-[var(--color-ink)] border-[var(--color-border)] bg-[var(--color-surface)]';
       case 'BUY': return 'text-[var(--color-accent)] border-[var(--color-accent)] bg-[var(--color-accent-muted)]';
       case 'HOLD': return 'text-[var(--color-warning)] border-[var(--color-warning)] bg-[rgba(255,184,0,0.1)]';
       case 'AVOID': return 'text-[var(--color-danger)] border-[var(--color-danger)] bg-[var(--color-danger-muted)]';
       default: return 'text-[var(--color-ink-muted)] border-[var(--color-border)]';
     }
   };
+
+  const isBasketHistoryItem = (item: any) =>
+    Array.isArray(item?.data?.tickers) && Array.isArray(item?.data?.allocations);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 lg:p-12 relative overflow-hidden h-full">
@@ -91,6 +101,12 @@ export default function Landing({ onAnalyze, onViewHistory }: LandingProps) {
           transition={{ delay: 0.2 }}
           className="w-full max-w-2xl my-6 md:my-8 flex-shrink-0"
         >
+          {error && (
+            <div className="mb-4 rounded-xl border border-[var(--color-danger)] bg-[var(--color-danger-muted)] px-4 py-3 text-left">
+              <p className="font-mono text-xs uppercase tracking-wider text-[var(--color-danger)]">Execution Failed</p>
+              <p className="mt-1 text-sm text-[var(--color-ink)]">{error}</p>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-[var(--color-border)] to-[var(--color-surface)] rounded-xl blur opacity-50 group-hover:opacity-100 transition duration-500"></div>
             <div className="relative flex items-center bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl p-1.5 md:p-2 focus-within:border-[var(--color-accent)] transition-colors">
@@ -147,9 +163,16 @@ export default function Landing({ onAnalyze, onViewHistory }: LandingProps) {
 
             <div className={`grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 w-full ${showAllHistory ? 'overflow-y-auto max-h-64 pr-2 custom-scrollbar' : ''}`}>
               {(showAllHistory ? history : history.slice(0, 3)).map((item, i) => {
-                // Handle both the old flat schema and the new nested institutional schema
-                const rec = item.data?.recommendation?.rating || item.data?.recommendation || 'N/A';
-                const score = item.data?.recommendation?.confidence_1_to_10 || item.data?.confidenceScore || 'N/A';
+                const isBasket = isBasketHistoryItem(item);
+                const rec = isBasket ? 'BASKET' : item.data?.recommendation?.rating || item.data?.recommendation || 'N/A';
+                const topAllocation = isBasket
+                  ? [...(item.data?.allocations || [])].sort((a: any, b: any) => b.percentage - a.percentage)[0]
+                  : null;
+                const scoreLabel = isBasket
+                  ? topAllocation
+                    ? `Top: ${topAllocation.ticker} ${topAllocation.percentage}%`
+                    : 'Basket comparison'
+                  : `Score: ${item.data?.recommendation?.confidence_1_to_10 || item.data?.confidenceScore || 'N/A'}/10`;
                 
                 return (
                   <div
@@ -165,7 +188,7 @@ export default function Landing({ onAnalyze, onViewHistory }: LandingProps) {
                     </div>
                     <div className="flex justify-between items-end">
                       <div className="flex flex-col">
-                        <span className="font-mono text-[10px] md:text-xs text-[var(--color-ink-muted)]">Score: {score}/10</span>
+                        <span className="font-mono text-[10px] md:text-xs text-[var(--color-ink-muted)]">{scoreLabel}</span>
                         <span className="font-mono text-[10px] md:text-xs text-[var(--color-ink-muted)]">{new Date(item.timestamp).toLocaleDateString()}</span>
                       </div>
                       <ChevronRight className="w-4 h-4 text-[var(--color-ink-muted)] group-hover:text-[var(--color-accent)] transition-colors" />

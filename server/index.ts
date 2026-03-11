@@ -1,129 +1,100 @@
-import express from 'express';
+import express, { type Express } from 'express';
 import cors from 'cors';
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
+import { generateAnalysis, type AnalysisType, type GeneratedAnalysis } from './analyze.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const require = createRequire(import.meta.url);
+const packageJson = require('../package.json') as { version: string };
+const CONTRACT_VERSION = 'analysis-v2';
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-const DATA_DIR = path.join(__dirname, '..', 'data');
-const REQUESTS_DIR = path.join(DATA_DIR, 'requests');
-const REPORTS_DIR = path.join(DATA_DIR, 'reports');
-
-// Ensure directories exist
-const initDirs = async () => {
-  await fs.mkdir(REQUESTS_DIR, { recursive: true });
-  await fs.mkdir(REPORTS_DIR, { recursive: true });
+type HistoryEntry = {
+  ticker: string;
+  data: unknown;
+  memo: string;
+  timestamp: string;
 };
-initDirs();
 
-// Endpoint to request an analysis
-app.post('/api/analyze', async (req, res) => {
-  try {
-    const { ticker, type } = req.body;
-    if (!ticker) {
-      return res.status(400).json({ error: 'Ticker is required' });
-    }
+type GenerateAnalysisFn = (ticker: string, type: AnalysisType) => Promise<GeneratedAnalysis>;
 
-    let finalTicker = ticker;
-    let version = 1;
-    let fileExists = true;
+export function createApp(generateAnalysisFn: GenerateAnalysisFn = generateAnalysis): {
+  app: Express;
+  historyCache: HistoryEntry[];
+  serverMetadata: {
+    version: string;
+    contractVersion: string;
+    startedAt: string;
+  };
+} {
+  const app = express();
+  const historyCache: HistoryEntry[] = [];
+  const serverMetadata = {
+    version: packageJson.version,
+    contractVersion: CONTRACT_VERSION,
+    startedAt: new Date().toISOString()
+  };
 
-    while (fileExists) {
-      const checkTicker = version === 1 ? ticker : `${ticker}v${version}`;
-      try {
-        await fs.access(path.join(REPORTS_DIR, `${checkTicker}_data.json`));
-        version++;
-      } catch (e) {
-        finalTicker = checkTicker;
-        fileExists = false;
-      }
-    }
+  app.use(cors());
+  app.use(express.json());
 
-    const requestFile = path.join(REQUESTS_DIR, `${finalTicker}.json`);
-    await fs.writeFile(requestFile, JSON.stringify({ ticker: finalTicker, type, timestamp: new Date().toISOString() }, null, 2));
-
-    res.json({ success: true, message: 'Analysis requested', ticker: finalTicker });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Endpoint to poll for analysis results
-app.get('/api/status/:ticker', async (req, res) => {
-  try {
-    const { ticker } = req.params;
-    const memoFile = path.join(REPORTS_DIR, `${ticker}_memo.md`);
-    const dataFile = path.join(REPORTS_DIR, `${ticker}_data.json`);
-
+  app.post('/api/analyze', async (req, res) => {
     try {
-      // Check if both files exist
-      await fs.access(memoFile);
-      await fs.access(dataFile);
-
-      // Read both files
-      const memoContent = await fs.readFile(memoFile, 'utf-8');
-      const dataContent = await fs.readFile(dataFile, 'utf-8');
-
-      // Return them
-      res.json({
-        status: 'complete',
-        memo: memoContent,
-        data: JSON.parse(dataContent)
-      });
-    } catch (e) {
-      // One or both files don't exist yet
-      res.json({ status: 'processing' });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Endpoint to get all completed reports for history
-app.get('/api/history', async (req, res) => {
-  try {
-    const files = await fs.readdir(REPORTS_DIR);
-    const dataFiles = files.filter(f => f.endsWith('_data.json'));
-    
-    const history = [];
-    for (const file of dataFiles) {
-      const ticker = file.replace('_data.json', '');
-      const memoFile = `${ticker}_memo.md`;
-      
-      try {
-        const dataContent = await fs.readFile(path.join(REPORTS_DIR, file), 'utf-8');
-        const memoContent = await fs.readFile(path.join(REPORTS_DIR, memoFile), 'utf-8');
-        const data = JSON.parse(dataContent);
-        
-        history.push({
-          ticker,
-          data,
-          memo: memoContent,
-          timestamp: (await fs.stat(path.join(REPORTS_DIR, file))).mtime
-        });
-      } catch (e) {
-        console.error(`Error reading history for ${ticker}`, e);
+      const { ticker, type } = req.body;
+      if (!ticker) {
+        return res.status(400).json({ error: 'Ticker is required' });
       }
-    }
-    
-    // Sort by newest first
-    history.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    res.json(history);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
 
-const PORT = 3001;
-app.listen(PORT, () => {
-  console.log(`Express server running on http://localhost:${PORT}`);
-});
+      const normalizedType: AnalysisType = type === 'basket' ? 'basket' : 'single';
+      console.log(`Starting cloud analysis for ${ticker} (Type: ${normalizedType})...`);
+      
+      const analysisResult = await generateAnalysisFn(ticker, normalizedType);
+      
+      historyCache.push({
+        ticker: ticker,
+        data: analysisResult.data,
+        memo: analysisResult.memo,
+        timestamp: new Date().toISOString()
+      });
+
+      res.json({ 
+        success: true, 
+        status: 'complete',
+        ticker: ticker,
+        data: analysisResult.data,
+        memo: analysisResult.memo
+      });
+
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal server error during analysis' });
+    }
+  });
+
+  app.get('/api/health', (req, res) => {
+    res.json({
+      status: 'online',
+      timestamp: new Date().toISOString(),
+      version: serverMetadata.version,
+      contractVersion: serverMetadata.contractVersion,
+      startedAt: serverMetadata.startedAt
+    });
+  });
+
+  app.get('/api/history', (req, res) => {
+    const sortedHistory = [...historyCache].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    res.json(sortedHistory);
+  });
+
+  return { app, historyCache, serverMetadata };
+}
+
+const shouldStartServer =
+  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (shouldStartServer) {
+  const PORT = 3001;
+  const { app } = createApp();
+  app.listen(PORT, () => {
+    console.log(`Express server running on http://localhost:${PORT}`);
+  });
+}

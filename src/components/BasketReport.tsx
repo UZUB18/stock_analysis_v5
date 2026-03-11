@@ -48,11 +48,19 @@ export default function BasketReport({ query, data, memo, onBack }: BasketReport
     { key: 'execution_dependency', label: 'Execution Dependency' }
   ];
 
+  const gauntletValues = subjects.flatMap(subj =>
+    tickers
+      .map((t: string) => data?.gauntlet_scores?.[subj.key]?.[t])
+      .filter((value: unknown): value is number => typeof value === 'number' && value > 0)
+  );
+  const useLegacyTenPointScale = gauntletValues.length > 0 && gauntletValues.every((value) => value <= 10);
+
   const radarData = subjects.map(subj => {
     const row: any = { subject: subj.label, fullMark: 100 };
     if (data?.gauntlet_scores?.[subj.key]) {
       tickers.forEach((t: string) => {
-        row[t] = data.gauntlet_scores[subj.key][t] || 0;
+        const rawValue = data.gauntlet_scores[subj.key][t] || 0;
+        row[t] = useLegacyTenPointScale ? rawValue * 10 : rawValue;
       });
     }
     return row;

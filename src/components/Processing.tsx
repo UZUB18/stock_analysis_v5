@@ -135,15 +135,7 @@ export default function Processing({ query, onComplete }: ProcessingProps) {
   const [logs, setLogs] = useState<string[]>([]);
   const [progress, setProgress] = useState(0);
   
-  const [reportData, setReportData] = useState<{data: any, memo: string} | null>(null);
   const [isTerminalFinished, setIsTerminalFinished] = useState(false);
-  const isFastForward = useRef(false);
-
-  useEffect(() => {
-    if (reportData) {
-      isFastForward.current = true;
-    }
-  }, [reportData]);
 
   useEffect(() => {
     // Fisher-Yates shuffle the middle steps
@@ -179,8 +171,8 @@ export default function Processing({ query, onComplete }: ProcessingProps) {
           setProgress((stepIndex / shuffledSteps.length) * 100);
           stepIndex++;
           
-          // If report is already generated, fast-forward the remaining steps
-          const nextDelay = isFastForward.current ? 300 : 2500;
+          // Fast-forward delay since the data is likely already ready from the main request
+          const nextDelay = 300; 
           timeoutId = setTimeout(processNextStep, nextDelay);
         } else {
           // Reached the final step
@@ -199,7 +191,7 @@ export default function Processing({ query, onComplete }: ProcessingProps) {
     };
 
     // Start the sequence
-    timeoutId = setTimeout(processNextStep, 1000); 
+    timeoutId = setTimeout(processNextStep, 500); 
 
     return () => {
       isCancelled = true;
@@ -209,41 +201,15 @@ export default function Processing({ query, onComplete }: ProcessingProps) {
   }, []);
 
   useEffect(() => {
-    if (!onComplete) return;
-
-    let isMounted = true;
-    const pollInterval = setInterval(async () => {
-      try {
-        const res = await fetch(`http://localhost:3001/api/status/${query}`);
-        const result = await res.json();
-        
-        if (result.status === 'complete' && isMounted) {
-          clearInterval(pollInterval);
-          // Store the data but don't call onComplete just yet
-          setReportData({ data: result.data, memo: result.memo });
-        }
-      } catch (err) {
-        console.error("Polling error", err);
-      }
-    }, 3000); // Poll every 3 seconds
-
-    return () => {
-      isMounted = false;
-      clearInterval(pollInterval);
-    };
-  }, [query, onComplete]);
-
-  useEffect(() => {
-    // Only transition to the dashboard if both the terminal sequence has reached the final step
-    // AND the background poll has successfully found the CLI report files.
-    if (isTerminalFinished && reportData && onComplete) {
+    // Only transition to the dashboard if the terminal sequence has reached the final step
+    if (isTerminalFinished && onComplete) {
       setProgress(100);
       const timer = setTimeout(() => {
-        onComplete(reportData.data, reportData.memo);
+        onComplete(null, ""); // Data is now held in App.tsx state, we just signal completion
       }, 1000); // Wait 1 second on 100% so user sees the completion and strobe effect
       return () => clearTimeout(timer);
     }
-  }, [isTerminalFinished, reportData, onComplete]);
+  }, [isTerminalFinished, onComplete]);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 relative">

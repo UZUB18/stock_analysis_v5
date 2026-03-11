@@ -12,14 +12,22 @@ export default function App() {
   const [query, setQuery] = useState('');
   const [reportData, setReportData] = useState<any>(null);
   const [reportMemo, setReportMemo] = useState<string>('');
+  const [appError, setAppError] = useState<string>('');
 
   const handleAnalyze = async (input: string) => {
     // Determine type
     const isBasket = input.includes(',') || input.toLowerCase().includes('compare') || (input.split(' ').length > 2 && (input.match(/[A-Z]{2,}/g)?.length || 0) > 1);
     const type = isBasket ? 'basket' : 'single';
     
+    // Set query and start processing animation immediately
+    setQuery(input);
+    setAppError('');
+    setReportData(null);
+    setReportMemo('');
+    setAppState('processing');
+    
     try {
-      // Fetch the assigned ticker from the backend first
+      // The API now does all the heavy lifting and returns the final JSON and Markdown
       const response = await fetch('http://localhost:3001/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -27,27 +35,33 @@ export default function App() {
       });
       const resData = await response.json();
       
-      const activeTicker = resData.ticker || input;
-      
-      // Now update the state so Processing mounts with the correct assigned ticker
-      setQuery(activeTicker);
-      setAppState('processing');
+      if (response.ok && resData.success && resData.status === 'complete') {
+        // Pre-load the data but wait for the Terminal animation to finish
+        setReportData(resData.data);
+        setReportMemo(resData.memo);
+      } else {
+        console.error("Backend returned an error or incomplete status:", resData);
+        setAppError(resData.error || 'The analysis request failed before a report was returned.');
+        setAppState('landing'); // Fallback on error
+      }
+
     } catch (e) {
       console.error("Failed to request analysis:", e);
-      // Fallback
-      setQuery(input);
-      setAppState('processing');
+      setAppError('The backend is unavailable or the request failed. Make sure the API server is running on http://localhost:3001.');
+      setAppState('landing'); // Fallback on error
     }
   };
 
-  const handleAnalysisComplete = (data: any, memo: string) => {
-    setReportData(data);
-    setReportMemo(memo);
-    const isBasket = query.includes(',') || query.toLowerCase().includes('compare') || (query.split(' ').length > 2 && (query.match(/[A-Z]{2,}/g)?.length || 0) > 1);
-    setAppState(isBasket ? 'report_basket' : 'report_single');
+  const handleAnalysisComplete = () => {
+    // This is called by Processing.tsx when its animation finishes
+    if (reportData && reportMemo) {
+      const isBasket = query.includes(',') || query.toLowerCase().includes('compare') || (query.split(' ').length > 2 && (query.match(/[A-Z]{2,}/g)?.length || 0) > 1);
+      setAppState(isBasket ? 'report_basket' : 'report_single');
+    }
   };
 
   const handleViewHistory = (ticker: string, data: any, memo: string) => {
+    setAppError('');
     setQuery(ticker);
     setReportData(data);
     setReportMemo(memo);
@@ -57,9 +71,9 @@ export default function App() {
 
   const handleReset = () => {
     setAppState('landing');
-    setQuery('');
     setReportData(null);
     setReportMemo('');
+    setAppError('');
   };
 
   return (
@@ -106,7 +120,7 @@ export default function App() {
                 transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                 className="flex-1 flex flex-col"
               >
-                <Landing onAnalyze={handleAnalyze} onViewHistory={handleViewHistory} />
+                <Landing onAnalyze={handleAnalyze} onViewHistory={handleViewHistory} initialQuery={query} error={appError} />
               </motion.div>
             )}
             

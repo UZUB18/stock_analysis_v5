@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, type Variants } from 'motion/react';
 import Markdown from 'react-markdown';
 import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Download, TrendingUp, TrendingDown, Minus, Info, FileText, LayoutDashboard, Target, Briefcase, TrendingUp as YieldIcon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Rectangle, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
@@ -141,7 +141,7 @@ export default function SingleStockReport({ query, data, memo, onBack }: SingleS
     }
   };
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -149,9 +149,9 @@ export default function SingleStockReport({ query, data, memo, onBack }: SingleS
     }
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+    show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } }
   };
 
   // Quality styling helpers
