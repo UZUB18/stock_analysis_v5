@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Terminal, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import AgentInvestor from './AgentInvestor';
+import CoffeeLoader from './CoffeeLoader';
 
 interface ProcessingProps {
   query: string;
@@ -275,6 +276,9 @@ export default function Processing({ query, onComplete }: ProcessingProps) {
             })}
           </div>
         </div>
+
+        {/* Coffee cup loading animation */}
+        <CoffeeLoader />
         
         <div className="w-full flex flex-col space-y-2">
           <div className="flex justify-between items-center text-xs font-mono text-[var(--color-ink-muted)] px-1">

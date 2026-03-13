@@ -68,7 +68,7 @@ function buildSingleAnalysisResult(): GeneratedAnalysis {
         fcf_margin_ttm_pct: 53,
         roic_ttm_pct: 83,
         roce_ttm_pct: 79,
-        fcf_to_net_income_pct: 96,
+        fcf_to_ebitda_pct: 96,
         accruals_ratio: 0.04,
         sbc_as_pct_revenue: 2.4,
         share_count_cagr_3y_pct: -0.8,
@@ -182,7 +182,7 @@ async function withServer(
   handler: (ticker: string, type: "single" | "basket") => Promise<GeneratedAnalysis>,
   fn: (baseUrl: string) => Promise<void>
 ) {
-  const { app } = createApp(handler);
+  const { app, db } = createApp(handler, ":memory:");
   const server = app.listen(0);
   await once(server, "listening");
   const { port } = server.address() as AddressInfo;
@@ -192,6 +192,7 @@ async function withServer(
     await fn(baseUrl);
   } finally {
     server.close();
+    db.close();
     await once(server, "close");
   }
 }
@@ -226,9 +227,61 @@ test("history stores single and basket analyses newest first", async () => {
     const historyResponse = await fetch(`${baseUrl}/api/history`);
     const history = await historyResponse.json();
 
-    assert.equal(history.length, 2);
-    assert.equal(history[0].ticker, "Compare NVDA, PLTR");
-    assert.ok(Array.isArray(history[0].data.tickers));
-    assert.equal(history[1].data.metadata.ticker, "NVDA");
+    assert.equal(history.items.length, 2);
+    assert.equal(history.total, 2);
+    assert.equal(history.page, 1);
+    assert.equal(history.totalPages, 1);
+    assert.equal(history.items[0].ticker, "Compare NVDA, PLTR");
+    assert.ok(Array.isArray(history.items[0].data.tickers));
+    assert.equal(history.items[1].data.metadata.ticker, "NVDA");
+  });
+});
+
+test("history pagination returns correct page and totalPages", async () => {
+  await withServer(async () => buildSingleAnalysisResult(), async (baseUrl) => {
+    // Insert 5 entries
+    for (let i = 0; i < 5; i++) {
+      await fetch(`${baseUrl}/api/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticker: `TICK${i}`, type: "single" })
+      });
+    }
+
+    // Request page 2 with limit 2
+    const res = await fetch(`${baseUrl}/api/history?page=2&limit=2`);
+    const data = await res.json();
+
+    assert.equal(data.items.length, 2);
+    assert.equal(data.total, 5);
+    assert.equal(data.page, 2);
+    assert.equal(data.totalPages, 3);
+  });
+});
+
+test("DELETE /api/history/:id removes entry", async () => {
+  await withServer(async () => buildSingleAnalysisResult(), async (baseUrl) => {
+    await fetch(`${baseUrl}/api/analyze`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ticker: "NVDA", type: "single" })
+    });
+
+    const histBefore = await (await fetch(`${baseUrl}/api/history`)).json();
+    assert.equal(histBefore.total, 1);
+    const entryId = histBefore.items[0].id;
+
+    const delRes = await fetch(`${baseUrl}/api/history/${entryId}`, { method: "DELETE" });
+    assert.equal(delRes.status, 200);
+
+    const histAfter = await (await fetch(`${baseUrl}/api/history`)).json();
+    assert.equal(histAfter.total, 0);
+  });
+});
+
+test("DELETE /api/history/:id returns 404 for missing entry", async () => {
+  await withServer(async () => buildSingleAnalysisResult(), async (baseUrl) => {
+    const res = await fetch(`${baseUrl}/api/history/99999`, { method: "DELETE" });
+    assert.equal(res.status, 404);
   });
 });

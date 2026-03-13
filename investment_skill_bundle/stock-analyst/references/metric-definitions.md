@@ -100,4 +100,4 @@ Use only if the economics are still analyzable. Emphasize:
 - cash runway
 - dilution path
 - scenario-weighted intrinsic value
-Confidence should rarely be high when the investment case requires several unproven steps to work in sequence.
+Evidence and data completeness scores should be low when the investment case requires several unproven steps to work in sequence.

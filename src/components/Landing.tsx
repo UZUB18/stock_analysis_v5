@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, useMotionValue, useSpring } from 'motion/react';
-import { Terminal, ArrowRight, ShieldCheck, Activity, Cpu, Clock, ChevronRight } from 'lucide-react';
+import { Terminal, ArrowRight, ShieldCheck, Activity, Cpu, Clock, ChevronRight, Trash2, Loader } from 'lucide-react';
+import WavyTitle from './WavyTitle';
 
 interface LandingProps {
   onAnalyze: (query: string) => void;
@@ -9,17 +10,21 @@ interface LandingProps {
   error?: string;
 }
 
+const HISTORY_PAGE_SIZE = 6;
+
 export default function Landing({ onAnalyze, onViewHistory, initialQuery = '', error = '' }: LandingProps) {
   const [input, setInput] = useState(initialQuery);
   const [history, setHistory] = useState<any[]>([]);
-  const [showAllHistory, setShowAllHistory] = useState(false);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyTotal, setHistoryTotal] = useState(0);
+  const [historyTotalPages, setHistoryTotalPages] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      // Offset by half the width/height (192px) to center the light on the cursor
       mouseX.set(e.clientX - 192);
       mouseY.set(e.clientY - 192);
     };
@@ -30,12 +35,27 @@ export default function Landing({ onAnalyze, onViewHistory, initialQuery = '', e
   const smoothX = useSpring(mouseX, { damping: 50, stiffness: 400 });
   const smoothY = useSpring(mouseY, { damping: 50, stiffness: 400 });
 
-  useEffect(() => {
-    fetch('http://localhost:3001/api/history')
-      .then(res => res.json())
-      .then(data => setHistory(data))
-      .catch(err => console.error("Failed to load history", err));
+  const fetchHistory = useCallback(async (page: number, append: boolean = false) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/history?page=${page}&limit=${HISTORY_PAGE_SIZE}`);
+      const data = await res.json();
+      if (data.items) {
+        setHistory(prev => append ? [...prev, ...data.items] : data.items);
+        setHistoryTotal(data.total);
+        setHistoryTotalPages(data.totalPages);
+        setHistoryPage(data.page);
+      } else {
+        // Fallback: legacy array response (shouldn't happen, but safe)
+        setHistory(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error("Failed to load history", err);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchHistory(1);
+  }, [fetchHistory]);
 
   useEffect(() => {
     setInput(initialQuery);
@@ -45,6 +65,26 @@ export default function Landing({ onAnalyze, onViewHistory, initialQuery = '', e
     e.preventDefault();
     if (input.trim()) {
       onAnalyze(input);
+    }
+  };
+
+  const handleLoadMore = async () => {
+    if (historyPage >= historyTotalPages || loadingMore) return;
+    setLoadingMore(true);
+    await fetchHistory(historyPage + 1, true);
+    setLoadingMore(false);
+  };
+
+  const handleDelete = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`http://localhost:3001/api/history/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setHistory(prev => prev.filter(item => item.id !== id));
+        setHistoryTotal(prev => prev - 1);
+      }
+    } catch (err) {
+      console.error("Failed to delete history entry", err);
     }
   };
 
@@ -83,12 +123,7 @@ export default function Landing({ onAnalyze, onViewHistory, initialQuery = '', e
             <span className="font-mono text-[10px] md:text-xs uppercase tracking-wider">A 14-step gauntlet for long-term equity deployment</span>
           </div>
 
-          <h1 className="display-heading text-4xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tighter">
-            Algorithmic Rigor.<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-[var(--color-ink-muted)]">
-              Audit-Grade Conviction.
-            </span>
-          </h1>
+          <WavyTitle />
 
           <p className="text-base md:text-lg text-[var(--color-ink-muted)] max-w-2xl mx-auto font-light leading-relaxed px-4">
             Upload a ticker. Download a mathematically enforced, bias-checked capital allocation memo. No narrative fluff. Just execution.
@@ -150,19 +185,14 @@ export default function Landing({ onAnalyze, onViewHistory, initialQuery = '', e
               <div className="flex items-center gap-2 text-[var(--color-ink-muted)]">
                 <Clock className="w-4 h-4 md:w-5 md:h-5" />
                 <h3 className="font-mono uppercase tracking-widest text-xs md:text-sm">Recent Memorandums</h3>
+                {historyTotal > 0 && (
+                  <span className="text-[10px] font-mono text-[var(--color-ink-muted)] opacity-70">({historyTotal})</span>
+                )}
               </div>
-              {history.length > 3 && (
-                <button
-                  onClick={() => setShowAllHistory(!showAllHistory)}
-                  className="text-[10px] md:text-xs font-mono uppercase tracking-wider text-[var(--color-ink-muted)] hover:text-[var(--color-accent)] transition-colors border border-[var(--color-border)] rounded px-2 py-1 bg-[var(--color-surface)]"
-                >
-                  {showAllHistory ? 'Show Less' : 'View All History'}
-                </button>
-              )}
             </div>
 
-            <div className={`grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 w-full ${showAllHistory ? 'overflow-y-auto max-h-64 pr-2 custom-scrollbar' : ''}`}>
-              {(showAllHistory ? history : history.slice(0, 3)).map((item, i) => {
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 w-full">
+              {history.map((item) => {
                 const isBasket = isBasketHistoryItem(item);
                 const rec = isBasket ? 'BASKET' : item.data?.recommendation?.rating || item.data?.recommendation || 'N/A';
                 const topAllocation = isBasket
@@ -176,10 +206,19 @@ export default function Landing({ onAnalyze, onViewHistory, initialQuery = '', e
                 
                 return (
                   <div
-                    key={i}
+                    key={item.id ?? item.timestamp}
                     onClick={() => onViewHistory && onViewHistory(item.ticker, item.data, item.memo)}
-                    className="glass-panel rounded-xl p-3 md:p-4 hover:-translate-y-1 hover:shadow-lg transition-all cursor-pointer flex flex-col justify-between h-24 md:h-28 border border-[var(--color-border)] group bg-[var(--color-surface)]"
+                    className="glass-panel rounded-xl p-3 md:p-4 hover:-translate-y-1 hover:shadow-lg transition-all cursor-pointer flex flex-col justify-between h-24 md:h-28 border border-[var(--color-border)] group bg-[var(--color-surface)] relative"
                   >
+                    {item.id != null && (
+                      <button
+                        onClick={(e) => handleDelete(e, item.id)}
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-[var(--color-danger-muted)] text-[var(--color-ink-muted)] hover:text-[var(--color-danger)]"
+                        title="Delete entry"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
                     <div className="flex justify-between items-start">
                       <span className="display-heading text-lg md:text-xl font-bold tracking-tighter group-hover:text-[var(--color-accent)] transition-colors truncate">{item.ticker}</span>
                       <span className={`px-2 py-0.5 md:py-1 text-[10px] md:text-xs font-bold font-mono uppercase rounded-full border ${getRecColor(rec)}`}>
@@ -189,7 +228,7 @@ export default function Landing({ onAnalyze, onViewHistory, initialQuery = '', e
                     <div className="flex justify-between items-end">
                       <div className="flex flex-col">
                         <span className="font-mono text-[10px] md:text-xs text-[var(--color-ink-muted)]">{scoreLabel}</span>
-                        <span className="font-mono text-[10px] md:text-xs text-[var(--color-ink-muted)]">{new Date(item.timestamp).toLocaleDateString()}</span>
+                        <span className="font-mono text-[10px] md:text-xs text-[var(--color-ink-muted)]">{new Date(item.created_at || item.timestamp).toLocaleDateString()}</span>
                       </div>
                       <ChevronRight className="w-4 h-4 text-[var(--color-ink-muted)] group-hover:text-[var(--color-accent)] transition-colors" />
                     </div>
@@ -197,6 +236,25 @@ export default function Landing({ onAnalyze, onViewHistory, initialQuery = '', e
                 );
               })}
             </div>
+
+            {historyPage < historyTotalPages && (
+              <div className="w-full flex justify-center mt-4">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  className="text-xs font-mono uppercase tracking-wider text-[var(--color-ink-muted)] hover:text-[var(--color-accent)] transition-colors border border-[var(--color-border)] rounded-lg px-4 py-2 bg-[var(--color-surface)] hover:bg-[var(--color-bg)] disabled:opacity-50 flex items-center gap-2"
+                >
+                  {loadingMore ? (
+                    <>
+                      <Loader className="w-3 h-3 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    `Load More (${historyTotal - history.length} remaining)`
+                  )}
+                </button>
+              </div>
+            )}
           </motion.div>
         )}
 

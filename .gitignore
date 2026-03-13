@@ -6,3 +6,11 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Databases
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# Temporary Files
+_tmp_e2e_*.json

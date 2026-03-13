@@ -66,7 +66,7 @@ export const SingleAnalysisDataSchema = z.object({
     fcf_margin_ttm_pct: NullableNumber,
     roic_ttm_pct: NullableNumber,
     roce_ttm_pct: NullableNumber,
-    fcf_to_net_income_pct: NullableNumber,
+    fcf_to_ebitda_pct: NullableNumber,
     accruals_ratio: NullableNumber,
     sbc_as_pct_revenue: NullableNumber,
     share_count_cagr_3y_pct: NullableNumber,

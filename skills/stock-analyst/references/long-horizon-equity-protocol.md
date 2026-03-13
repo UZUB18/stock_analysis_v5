@@ -82,7 +82,7 @@ Use AFFO, NAV context, occupancy, lease maturity, same-store NOI, debt to EBITDA
 Normalize at mid-cycle margins or prices. The cheapest-looking multiple at peak earnings is often a trap wearing a spreadsheet.
 
 ### Pre-profit or special situations
-If conventional earnings-based methods are invalid, say so explicitly and switch to runway, unit economics, probability-weighted scenarios, and dilution analysis. Confidence should fall accordingly.
+If conventional earnings-based methods are invalid, say so explicitly and switch to runway, unit economics, probability-weighted scenarios, and dilution analysis. Adjust fragility and evidence scores accordingly.
 
 ## Valuation framework
 Always triangulate with at least two distinct methods. Good default combinations:

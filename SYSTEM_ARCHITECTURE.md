@@ -61,7 +61,7 @@ The frontend intentionally supports mixed response shapes during transition:
 *   **API Key**: Requires `GEMINI_API_KEY` in a `.env` file.
 *   **Environment**: The backend is decoupled from repo-tracked output files and is ready for cloud deployment (e.g., Render, Railway, Vercel).
 *   **Health Metadata**: `/api/health` now returns `status`, `timestamp`, `version`, `contractVersion`, and `startedAt`, which makes stale local server processes easier to identify.
-*   **History**: Currently managed via an in-memory cache, easily swappable for a persistent database (SQLite/PostgreSQL).
+*   **History**: Persisted in a SQLite database (`data/history.db`) via `better-sqlite3`. The `/api/history` endpoint supports pagination (`?page=&limit=`) and individual entry deletion (`DELETE /api/history/:id`). The `server/db.ts` module uses WAL mode and prepared statements for performance.
 *   **Testing**: The repo now includes an automated `npm test` path using Node's built-in test runner via `tsx --test`, covering validator logic and Express endpoints without live Gemini calls.
 
 ---

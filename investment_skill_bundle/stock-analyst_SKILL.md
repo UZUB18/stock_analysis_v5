@@ -39,7 +39,7 @@ Create exactly two files:
 2. `[TICKER]_memo.md`
 
 The memo must be audit-ready and explicitly cover:
-- recommendation and confidence with basis
+- recommendation with basis
 - three-line thesis
 - market mispricing claim
 - must-be-true conditions

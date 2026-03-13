@@ -72,7 +72,7 @@ function buildValidSingleTransport() {
       fcf_margin_ttm_pct: 53,
       roic_ttm_pct: 83,
       roce_ttm_pct: 79,
-      fcf_to_net_income_pct: 96,
+      fcf_to_ebitda_pct: 96,
       accruals_ratio: 0.04,
       sbc_as_pct_revenue: 2.4,
       share_count_cagr_3y_pct: -0.8,
@@ -185,7 +185,7 @@ function buildValidSingleTransport() {
 [Interpretation] CUDA drives switching costs.
 
 ## 6. Financial Quality Audit
-[Derived] FCF Conversion = Free Cash Flow / Net Income = 96.7 / 100.7 = 96%.
+[Derived] FCF Conversion = Free Cash Flow / EBITDA = 96.7 / 100.7 = 96%.
 [Derived] Accruals Ratio = (Net Income - Operating Cash Flow) / Average Total Assets = (100.7 - 118.2) / 437.5 = -0.04.
 [Derived] ROE = Net Income / Shareholders' Equity = 100.7 / 132.0 = 76%.
 

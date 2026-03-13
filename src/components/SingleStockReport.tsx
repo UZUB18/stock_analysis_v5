@@ -87,7 +87,7 @@ export default function SingleStockReport({ query, data, memo, onBack }: SingleS
   const archetype = data.business_quality?.archetype || '';
   
   // Financial Quality
-  const fcfConversion = data.financial_quality?.fcf_to_net_income_pct?.toFixed(1) || data.fcfConversion || 'N/A';
+  const fcfConversion = (data.financial_quality?.fcf_to_ebitda_pct ?? data.financial_quality?.fcf_to_net_income_pct)?.toFixed(1) || data.fcfConversion || 'N/A';
   const accrualsRatio = data.financial_quality?.accruals_ratio?.toFixed(2) || data.accrualsRatio || 'N/A';
   const sbcRev = data.financial_quality?.sbc_as_pct_revenue?.toFixed(1) || data.sbcRev || 'N/A';
   const revenueCagr = data.financial_quality?.revenue_cagr_3y_pct?.toFixed(1) || 'N/A';
@@ -338,7 +338,7 @@ export default function SingleStockReport({ query, data, memo, onBack }: SingleS
             <div className="bg-[var(--color-bg)] p-6 flex flex-col space-y-2 rounded-tr-2xl md:rounded-none">
               <span className="font-mono text-xs text-[var(--color-ink-muted)] uppercase tracking-wider flex items-center">
                 FCF Conversion
-                <InfoTooltip text="Free Cash Flow divided by Net Income. >100% is ideal." />
+                <InfoTooltip text="Free Cash Flow divided by EBITDA. >100% is ideal." />
               </span>
               <span className={`display-heading text-3xl font-bold ${getQualityColor(fcfConversion, 'high-is-good', [50, 100])}`}>{fcfConversion}%</span>
             </div>

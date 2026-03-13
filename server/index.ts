@@ -3,23 +3,20 @@ import cors from 'cors';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { generateAnalysis, type AnalysisType, type GeneratedAnalysis } from './analyze.js';
+import { initDb, type HistoryDb } from './db.js';
 
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json') as { version: string };
 const CONTRACT_VERSION = 'analysis-v2';
 
-type HistoryEntry = {
-  ticker: string;
-  data: unknown;
-  memo: string;
-  timestamp: string;
-};
-
 type GenerateAnalysisFn = (ticker: string, type: AnalysisType) => Promise<GeneratedAnalysis>;
 
-export function createApp(generateAnalysisFn: GenerateAnalysisFn = generateAnalysis): {
+export function createApp(
+  generateAnalysisFn: GenerateAnalysisFn = generateAnalysis,
+  dbPath?: string
+): {
   app: Express;
-  historyCache: HistoryEntry[];
+  db: HistoryDb;
   serverMetadata: {
     version: string;
     contractVersion: string;
@@ -27,7 +24,7 @@ export function createApp(generateAnalysisFn: GenerateAnalysisFn = generateAnaly
   };
 } {
   const app = express();
-  const historyCache: HistoryEntry[] = [];
+  const db = initDb(dbPath);
   const serverMetadata = {
     version: packageJson.version,
     contractVersion: CONTRACT_VERSION,
@@ -49,11 +46,11 @@ export function createApp(generateAnalysisFn: GenerateAnalysisFn = generateAnaly
       
       const analysisResult = await generateAnalysisFn(ticker, normalizedType);
       
-      historyCache.push({
-        ticker: ticker,
+      db.insertHistory({
+        ticker,
+        type: normalizedType,
         data: analysisResult.data,
         memo: analysisResult.memo,
-        timestamp: new Date().toISOString()
       });
 
       res.json({ 
@@ -81,11 +78,25 @@ export function createApp(generateAnalysisFn: GenerateAnalysisFn = generateAnaly
   });
 
   app.get('/api/history', (req, res) => {
-    const sortedHistory = [...historyCache].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    res.json(sortedHistory);
+    const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
+    const limit = Math.max(1, Math.min(parseInt(req.query.limit as string, 10) || 20, 100));
+    const result = db.getHistory(page, limit);
+    res.json(result);
   });
 
-  return { app, historyCache, serverMetadata };
+  app.delete('/api/history/:id', (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid history entry ID' });
+    }
+    const deleted = db.deleteHistoryEntry(id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'History entry not found' });
+    }
+    res.json({ success: true });
+  });
+
+  return { app, db, serverMetadata };
 }
 
 const shouldStartServer =

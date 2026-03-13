@@ -89,6 +89,22 @@ MEMO DISCIPLINE
 - Inside memo_markdown, explicitly tag statements using [Fact], [Estimate], [Derived], [Interpretation], and [Judgment].
 - Use code execution for all arithmetic and valuation work, including growth rates, margins, leverage, dilution, FCF conversion, accruals ratio, ROE, ROIC, valuation math, and bear/base/bull return scenarios.
 - For each mandatory calculated metric, explicitly show the metric label, the formula, the inputs, and the result.
+
+MANDATORY FORMULAS:
+- Revenue CAGR (3y) = ((Current Revenue / Revenue 3 Years Ago) ^ (1/3) - 1) * 100
+- Gross Margin = (Gross Profit / Revenue) * 100
+- Operating Margin = (Operating Income / Revenue) * 100
+- FCF Margin = (Free Cash Flow / Revenue) * 100
+- ROIC = (NOPAT / Average Invested Capital) * 100 [NOPAT = EBIT * (1 - Tax Rate)]
+- ROCE = (EBIT / Capital Employed) * 100 [Capital Employed = Total Assets - Current Liabilities]
+- FCF Conversion = (Free Cash Flow / EBITDA) * 100
+- Accruals Ratio = (Net Income - Operating Cash Flow) / Average Total Assets
+- ROE = (Net Income / Average Shareholders Equity) * 100
+- SBC % of Rev = (Stock-Based Compensation / Revenue) * 100
+- Net Debt to EBITDA = (Total Debt - Cash & Equivalents) / EBITDA
+- Current Ratio = Current Assets / Current Liabilities
+- PEG Ratio = (Forward P/E) / (Expected EPS Growth Rate * 100)
+- FCF Yield = (Free Cash Flow / Market Cap) * 100
 - The bias check section must explicitly include:
   1. Bear-case steelman
   2. Why this view is differentiated vs consensus
@@ -143,6 +159,22 @@ Your task is to decide where fresh 3 to 5+ year capital belongs today. You are n
 Use Google Search grounding and code execution. Pull current market data and current fundamental context for each ticker. Use code execution to normalize comparisons and avoid arithmetic errors.
 
 Return ONLY valid JSON matching the provided JSON schema. Do not output prose outside the JSON.
+
+MANDATORY FORMULAS:
+- Revenue CAGR (3y) = ((Current Revenue / Revenue 3 Years Ago) ^ (1/3) - 1) * 100
+- Gross Margin = (Gross Profit / Revenue) * 100
+- Operating Margin = (Operating Income / Revenue) * 100
+- FCF Margin = (Free Cash Flow / Revenue) * 100
+- ROIC = (NOPAT / Average Invested Capital) * 100 [NOPAT = EBIT * (1 - Tax Rate)]
+- ROCE = (EBIT / Capital Employed) * 100 [Capital Employed = Total Assets - Current Liabilities]
+- FCF Conversion = (Free Cash Flow / EBITDA) * 100
+- Accruals Ratio = (Net Income - Operating Cash Flow) / Average Total Assets
+- ROE = (Net Income / Average Shareholders Equity) * 100
+- SBC % of Rev = (Stock-Based Compensation / Revenue) * 100
+- Net Debt to EBITDA = (Total Debt - Cash & Equivalents) / EBITDA
+- Current Ratio = Current Assets / Current Liabilities
+- PEG Ratio = (Forward P/E) / (Expected EPS Growth Rate * 100)
+- FCF Yield = (Free Cash Flow / Market Cap) * 100
 
 JSON CONTRACT
 - Populate these top-level keys exactly: tickers, allocations, gauntlet_scores, garp_metrics, memo_markdown.
@@ -257,7 +289,7 @@ function validateSingleMemoContent(data: z.infer<typeof SingleAnalysisTransportS
   }
 
   const formulaPatterns = [
-    /fcf conversion[\s\S]{0,300}(free cash flow\s*\/\s*net income|formula|=)/i,
+    /fcf conversion[\s\S]{0,300}(free cash flow\s*\/\s*ebitda|formula|=)/i,
     /accruals ratio[\s\S]{0,350}(net income[\s\S]{0,120}operating cash flow|formula|=|average total assets|avg\.?\s*assets)/i,
     /\bROE\b[\s\S]{0,300}(net income[\s\S]{0,160}(shareholders' equity|equity)|return on equity|formula|=)/i
   ];
@@ -292,7 +324,36 @@ export function validateSingleCandidate(candidate: unknown): ValidationResult<Si
   }
 
   const { memo_markdown, ...data } = parsed.data;
-  return { data, memo: memo_markdown, issues: [] };
+
+  // Calculate deterministic weighted confidence score
+  const bq = data.business_quality;
+  const risk = data.risk;
+  const ap = data.analyst_process;
+
+  const w_evidence = (ap.evidence_quality_score_10 || 5) * 0.15;
+  const w_data = (ap.data_completeness_score_10 || 5) * 0.10;
+  const w_est_dep = (10 - (ap.estimate_dependence_score_10 || 5)) * 0.10;
+  const w_fragility = (10 - (risk.fragility_score_10 || 5)) * 0.15;
+  const w_durability = (bq.durability_score_10 || 5) * 0.10;
+  const w_balance = (bq.balance_sheet_score_10 || 5) * 0.10;
+  const w_moat = (bq.moat_score_10 || 5) * 0.10;
+  const w_mgmt = (bq.management_execution_score_10 || 5) * 0.05;
+  const w_alloc = (bq.capital_allocation_score_10 || 5) * 0.05;
+  const w_pricing = (bq.pricing_power_score_10 || 5) * 0.05;
+  const w_runway = (bq.reinvestment_runway_score_10 || 5) * 0.05;
+
+  let calculatedConfidence = w_evidence + w_data + w_est_dep + w_fragility + w_durability + w_balance + w_moat + w_mgmt + w_alloc + w_pricing + w_runway;
+  calculatedConfidence = Math.max(1, Math.min(10, Math.round(calculatedConfidence * 10) / 10));
+
+  data.recommendation.confidence_1_to_10 = calculatedConfidence;
+
+  // Update the memo to reflect the calculated score
+  const updatedMemo = memo_markdown.replace(
+    /\*\*Confidence Score:\*\*(?:.*?)(\d+(?:\.\d+)?)\/10/i,
+    `**Confidence Score:** ${calculatedConfidence}/10 (Weighted)`
+  );
+
+  return { data, memo: updatedMemo, issues: [] };
 }
 
 export function validateBasketCandidate(candidate: unknown): ValidationResult<BasketAnalysis> {
